@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, touch-action=manipulation">
+    <title>SunCan锻刀大师</title>
+    <style>
+        :root {
+            --bg-main: #1e3a4a;
+            --bg-panel: #0b2a33;
+            --accent: #f6c978;
+            --accent-dark: #a0803a;
+            --btn-back: #557a86;
+            --btn-back-dark: #2f4b54;
+            --text-light: #c6e9f0;
+            --border: #3b8b8f;
+            --bg-gradient: linear-gradient(145deg, #1a2f3f 0%, #0f1c26 100%);
+            --input-bg: #1d4a52;
+            --input-inner: #2d6b70;
+            --input-text: #ffd98c;
+            --danger: #e0553d;
+            --success: #7d9b4e;
+            --shadow-lg: 0 25px 40px rgba(0, 0, 0, 0.6);
+            --shadow-inner-glow: 0 0 8px #5f9ea0;
+            --shadow-panel: 0 8px 12px #0a1a22;
+            --radius-lg: 2rem;
+            --radius-panel: 1.8rem;
+            --radius-btn: 40px;
+            --radius-card: 20px;
+            --radius-modal: 2rem;
+            --radius-switch: 30px;
+            --font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            --font-mono: 'SF Mono', 'Cascadia Code', monospace;
+            --transition-fast: 0.1s;
+            --transition-normal: 0.2s;
+            --transition-slow: 0.3s;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg-gradient);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            font-family: var(--font-family);
+            color: var(--text-light);
+            user-select: none;
+            padding: 12px;
+        }
+        .app-wrapper {
+            width: 100%;
+            max-width: 650px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .header { text-align: center; padding-top: 4px; }
+        .title {
+            font-size: 1.9em;
+            font-weight: 900;
+            letter-spacing: 4px;
+            background: linear-gradient(180deg, #ffe8b8, var(--accent), #b08030);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle { font-size: 0.8em; color: #7a8a80; letter-spacing: 3px; }
+        .tab-nav {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+        .tab-btn {
+            flex: 1;
+            max-width: 160px;
+            padding: 10px 20px;
+            border-radius: var(--radius-btn);
+            border: 2px solid var(--border);
+            background: var(--bg-panel);
+            color: var(--text-light);
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.95em;
+            letter-spacing: 2px;
+            transition: all var(--transition-normal);
+            text-align: center;
+        }
+        .tab-btn:hover { border-color: #5a9a9e; background: #122a30; color: #ffe8b8; }
+        .tab-btn.active {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #1e3d42;
+            box-shadow: 0 0 22px rgba(246, 201, 120, 0.45);
+            font-weight: 900;
+        }
+        .tab-btn:disabled { opacity: 0.4; pointer-events: none; filter: grayscale(30%); }
+        .view-container { display: none; flex-direction: column; gap: 8px; }
+        .view-container.active { display: flex; }
+        .game-container {
+            background: var(--bg-main);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-lg), var(--shadow-inner-glow);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #5a3a1a, var(--accent), #ffe8b0, var(--accent), #5a3a1a);
+            border-radius: 2rem 2rem 0 0;
+            opacity: 0.85;
+        }
+        .flash-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.18);
+            pointer-events: none;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+            border-radius: var(--radius-lg);
+        }
+        .flash-overlay.active { opacity: 1; }
+        .stage-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            margin: 10px 0 14px;
+            flex-wrap: wrap;
+        }
+        .stage-dot {
+            width: 34px;
+            height: 34px;
+            border-radius: var(--radius-switch);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65em;
+            font-weight: bold;
+            background: var(--bg-panel);
+            transition: all var(--transition-slow);
+            cursor: default;
+        }
+        .stage-dot.active { border-color: var(--accent); background: var(--accent); color: #1e3d42; box-shadow: 0 0 20px rgba(246, 201, 120, 0.5); }
+        .stage-dot.done { border-color: var(--success); color: var(--success); background: #0f1f18; }
+        .stage-connector { width: 16px; height: 2px; background: var(--border); border-radius: 1px; }
+        .stage-connector.done { background: var(--success); }
+        .canvas-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto 12px;
+            background: #0c1a20;
+            border-radius: 14px;
+            border: 2px solid var(--border);
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.55), 0 8px 24px rgba(0, 0, 0, 0.45);
+            aspect-ratio: 5/4;
+            overflow: hidden;
+            cursor: grab;
+            transition: border-color var(--transition-slow), box-shadow var(--transition-slow);
+        }
+        .canvas-wrap:active { cursor: grabbing; }
+        .canvas-wrap.forge-glow { border-color: #e07040; }
+        .canvas-wrap.grind-glow { border-color: var(--accent); }
+        .canvas-wrap.hammer-glow { border-color: var(--accent); box-shadow: 0 0 40px rgba(246, 201, 120, 0.55); }
+        canvas { display: block; width: 100%; height: 100%; border-radius: 12px; }
+        .controls {
+            background: var(--bg-panel);
+            border-radius: var(--radius-panel);
+            padding: 1.2rem 1rem;
+            border-bottom: 3px solid var(--border);
+            box-shadow: inset 0 2px 5px #051217, var(--shadow-panel);
+            min-height: 70px;
+        }
+        /* 仓库 & 市场 共用样式 */
+        .warehouse-container, .market-container {
+            background: var(--bg-main);
+            border-radius: var(--radius-lg);
+            padding: 1.2rem;
+            box-shadow: var(--shadow-lg), var(--shadow-inner-glow);
+            border: 1px solid var(--border);
+            max-height: 70vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .warehouse-container::before, .market-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #5a3a1a, var(--accent), #ffe8b0, var(--accent), #5a3a1a);
+            border-radius: 2rem 2rem 0 0;
+            opacity: 0.85;
+        }
+        .sub-tab {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+        .sub-tab-btn {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-btn);
+            padding: 6px 16px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all var(--transition-normal);
+            color: var(--text-light);
+        }
+        .sub-tab-btn.active {
+            background: var(--accent);
+            color: #1e3d42;
+            border-color: var(--accent-dark);
+        }
+        .warehouse-grid, .market-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        .card {
+            background: var(--bg-panel);
+            border-radius: var(--radius-card);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: all var(--transition-normal);
+        }
+        .card:hover { border-color: #5a9a9e; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); transform: translateY(-2px); }
+        .card-img-wrap {
+            width: 100%;
+            aspect-ratio: 5/4;
+            background: #0c1a20;
+            overflow: hidden;
+            border-bottom: 1px solid var(--border);
+        }
+        .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .card-info { padding: 10px 12px; }
+        .card-name {
+            font-weight: 700;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card-stats {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            font-size: 0.65em;
+            color: #8a9a90;
+        }
+        .card-stats span { background: rgba(0, 0, 0, 0.3); border-radius: 6px; padding: 2px 6px; }
+        .card-value {
+            font-weight: 700;
+            font-size: 0.85em;
+            color: var(--accent);
+            font-family: var(--font-mono);
+        }
+        .card-crack { color: var(--danger); font-size: 0.7em; font-weight: 600; animation: pulse 1.4s infinite; }
+        .card-actions { display: flex; gap: 6px; margin-top: 4px; }
+        .card-actions button {
+            flex: 1;
+            padding: 5px 8px;
+            font-size: 0.7em;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--input-bg);
+            color: var(--text-light);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.15s;
+        }
+        .card-actions button:hover { border-color: var(--accent); background: #2a2218; color: #ffe8b8; }
+        .card-actions button.danger-btn:hover { border-color: var(--danger); background: #2a1010; color: #ff8080; }
+        .warehouse-empty, .market-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #5a7a7a;
+            font-size: 0.95em;
+        }
+        .empty-icon { font-size: 3em; display: block; margin-bottom: 10px; opacity: 0.6; }
+        @keyframes pulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+        .mat-shelf {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+        .mat-item {
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-card);
+            border: 1px solid var(--border);
+            background: var(--bg-panel);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-normal);
+            font-size: 0.7em;
+            font-weight: 600;
+            color: var(--text-light);
+            position: relative;
+            overflow: hidden;
+        }
+        .mat-item::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--mat-color, var(--border));
+            border-radius: 3px 0 0 3px;
+        }
+        .mat-item:hover { border-color: var(--accent); transform: translateY(-3px); color: #ffe8b8; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3); }
+        .mat-item:active { transform: scale(0.93); }
+        .mat-icon { font-size: 1.4em; line-height: 1; }
+        .mat-label { font-size: 0.6em; font-weight: 500; }
+        .mat-item.selected {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #1e3d42;
+            box-shadow: 0 0 18px rgba(246, 201, 120, 0.55);
+        }
+        .slot-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .slot {
+            width: 58px;
+            height: 58px;
+            border-radius: var(--radius-card);
+            border: 3px dashed var(--border);
+            background: #081820;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            color: #557a7a;
+            transition: all var(--transition-slow);
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .slot.filled {
+            border-style: solid;
+            border-color: var(--accent);
+            background: #1a1e14;
+            color: #d0b870;
+            box-shadow: 0 0 10px rgba(246, 201, 120, 0.25);
+        }
+        .btn {
+            padding: 8px 18px;
+            border-radius: var(--radius-btn);
+            border: none;
+            background: var(--accent);
+            color: #1e3d42;
+            cursor: pointer;
+            font-weight: 800;
+            letter-spacing: 1px;
+            font-size: 0.9em;
+            transition: all 0.15s ease;
+            font-family: var(--font-family);
+            box-shadow: 0 5px 0 var(--accent-dark), 0 8px 12px rgba(0, 0, 0, 0.3);
+            position: relative;
+            top: 0;
+        }
+        .btn:hover { box-shadow: 0 5px 0 var(--accent-dark), 0 10px 18px rgba(0, 0, 0, 0.35); filter: brightness(1.08); }
+        .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--accent-dark), 0 3px 6px rgba(0, 0, 0, 0.3); }
+        .btn:disabled { opacity: 0.45; pointer-events: none; filter: grayscale(30%); }
+        .btn-secondary {
+            background: var(--btn-back);
+            color: #ecf9ff;
+            box-shadow: 0 5px 0 var(--btn-back-dark), 0 8px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid #9bc7d4;
+        }
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 0.75em;
+            border-radius: 30px;
+            box-shadow: 0 3px 0 var(--accent-dark), 0 5px 8px rgba(0, 0, 0, 0.25);
+        }
+        .temp-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .temp-display { font-size: 2em; font-weight: 900; font-family: var(--font-mono); }
+        .temp-bar {
+            width: 100%;
+            max-width: 400px;
+            height: 24px;
+            background: var(--input-bg);
+            border-radius: var(--radius-card);
+            border: 2px solid var(--border);
+            position: relative;
+            margin: 4px 0;
+            overflow: hidden;
+        }
+        .temp-fill { height: 100%; background: linear-gradient(90deg, #3a4a8a, #a03030, #e08020, #f0d040); opacity: 0.5; transition: width 0.15s linear; }
+        .temp-zone {
+            position: absolute;
+            top: 3px;
+            bottom: 3px;
+            background: rgba(120, 160, 70, 0.35);
+            border: 1px dashed rgba(160, 200, 100, 0.6);
+            pointer-events: none;
+        }
+        .time-bar {
+            width: 100%;
+            max-width: 400px;
+            height: 8px;
+            background: var(--input-bg);
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .time-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.3s linear; }
+        .tool-select {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .tool-btn {
+            width: 50px;
+            height: 34px;
+            border-radius: var(--radius-switch);
+            border: 1px solid var(--border);
+            background: var(--bg-panel);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-normal);
+        }
+        .tool-btn:hover { border-color: #5a9a9e; background: #122a30; }
+        .tool-btn.active-tool { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 18px rgba(246, 201, 120, 0.5); }
+        .tool-btn svg { width: 20px; height: 20px; fill: #7a8a80; }
+        .tool-btn.active-tool svg { fill: #1e3d42; }
+        .force-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .force-bar {
+            width: 100%;
+            max-width: 400px;
+            height: 14px;
+            background: var(--input-bg);
+            border-radius: 7px;
+            border: 2px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+        .force-needle {
+            position: absolute;
+            top: -2px;
+            width: 4px;
+            height: 18px;
+            background: #f0d040;
+            border-radius: 2px;
+            box-shadow: 0 0 14px rgba(240, 200, 60, 0.8);
+            transition: left 0.05s linear;
+            z-index: 2;
+        }
+        .force-zone {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            background: rgba(120, 160, 70, 0.3);
+            border-left: 1px dashed rgba(160, 200, 100, 0.5);
+            border-right: 1px dashed rgba(160, 200, 100, 0.5);
+            pointer-events: none;
+        }
+        .stats {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            font-size: 0.8em;
+        }
+        .stat {
+            background: var(--input-bg);
+            border-radius: 10px;
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            text-align: center;
+            min-width: 50px;
+        }
+        .stat-val { font-weight: 700; font-size: 1.2em; color: var(--accent); font-family: var(--font-mono); }
+        .crack-indicator { color: var(--danger); font-weight: 700; font-size: 0.75em; text-align: center; animation: pulse 1s infinite; }
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-main);
+            color: var(--accent);
+            padding: 14px 28px;
+            border-radius: var(--radius-card);
+            font-weight: 700;
+            letter-spacing: 1px;
+            z-index: 100;
+            display: none;
+            white-space: nowrap;
+            border: 2px solid var(--accent);
+            font-size: 1em;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.7);
+            text-align: center;
+            pointer-events: none;
+        }
+        @media (max-width: 520px) {
+            .game-container { padding: 1rem 0.7rem; border-radius: 1.4rem; }
+            .warehouse-container, .market-container { padding: 0.8rem 0.6rem; border-radius: 1.4rem; }
+            .warehouse-grid, .market-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+            .card-info { padding: 6px 8px; }
+            .card-name { font-size: 0.75em; }
+            .card-stats { font-size: 0.58em; }
+            .card-value { font-size: 0.72em; }
+            .card-actions button { font-size: 0.62em; padding: 4px 6px; }
+            .controls { padding: 0.8rem 0.6rem; border-radius: 1.2rem; }
+            .title { font-size: 1.4em; letter-spacing: 2px; }
+            .subtitle { font-size: 0.65em; letter-spacing: 1px; }
+            .mat-item { width: 40px; height: 40px; border-radius: 14px; font-size: 0.6em; }
+            .mat-icon { font-size: 1.2em; }
+            .slot { width: 46px; height: 46px; border-radius: 14px; font-size: 0.6em; }
+            .tool-btn { width: 40px; height: 30px; border-radius: 22px; }
+            .tool-btn svg { width: 16px; height: 16px; }
+            .btn { padding: 6px 14px; font-size: 0.75em; border-radius: 30px; letter-spacing: 0.5px; }
+            .btn-sm { padding: 5px 10px; font-size: 0.68em; border-radius: 24px; }
+            .stage-dot { width: 28px; height: 28px; font-size: 0.55em; border-radius: 22px; }
+            .stage-connector { width: 10px; }
+            .stats { gap: 4px; font-size: 0.7em; }
+            .stat { padding: 4px 7px; border-radius: 8px; }
+            .stat-val { font-size: 1em; }
+            .temp-display { font-size: 1.5em; }
+            .toast { padding: 10px 18px; font-size: 0.85em; border-radius: 14px; }
+            .tab-btn { padding: 8px 14px; font-size: 0.8em; letter-spacing: 1px; max-width: 130px; }
+        }
+        @media (max-width: 380px) {
+            body { padding: 6px; }
+            .game-container, .warehouse-container, .market-container { padding: 0.6rem 0.4rem; border-radius: 1rem; }
+            .warehouse-grid, .market-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
+            .card-info { padding: 4px 6px; }
+            .card-name { font-size: 0.68em; }
+            .card-stats { font-size: 0.52em; }
+            .mat-item { width: 34px; height: 34px; border-radius: 10px; }
+            .mat-icon { font-size: 1em; }
+            .slot { width: 38px; height: 38px; border-radius: 10px; }
+            .btn { padding: 5px 10px; font-size: 0.7em; border-radius: 24px; }
+            .btn-sm { padding: 4px 8px; font-size: 0.62em; }
+            .stage-dot { width: 24px; height: 24px; font-size: 0.5em; border-radius: 16px; }
+            .title { font-size: 1.2em; }
+            .tab-btn { padding: 6px 10px; font-size: 0.7em; max-width: 110px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-wrapper" id="appWrapper">
+    <div class="header"><div class="title">锻 刀 大 师</div><div class="subtitle">真火炼刃 · 千度成锋</div></div>
+    <div class="tab-nav" id="tabNav">
+        <button class="tab-btn active" data-tab="forge">锻 造</button>
+        <button class="tab-btn" data-tab="warehouse">仓 库</button>
+        <button class="tab-btn" data-tab="market">市 场</button>
+        <button class="tab-btn" data-tab="combat">战 斗</button>
+    </div>
+
+    <!-- 锻造视图 -->
+    <div class="view-container active" id="viewForge">
+        <div class="game-container" id="gameContainer">
+            <div class="flash-overlay" id="flashOverlay"></div>
+            <div class="stage-row" id="stageIndicator">
+                <div class="stage-dot active" data-stage="0">选材</div><div class="stage-connector"></div>
+                <div class="stage-dot" data-stage="1">熔炼</div><div class="stage-connector"></div>
+                <div class="stage-dot" data-stage="2">打磨</div><div class="stage-connector"></div>
+                <div class="stage-dot" data-stage="3">锤打</div>
+            </div>
+            <div class="canvas-wrap" id="canvasWrap">
+                <canvas id="mainCanvas"></canvas>
+            </div>
+            <div class="controls" id="controlsArea"></div>
+        </div>
+    </div>
+
+    <!-- 仓库视图 -->
+    <div class="view-container" id="viewWarehouse">
+        <div class="warehouse-container" id="warehouseContainer">
+            <div class="sub-tab">
+                <button class="sub-tab-btn active" data-sub="weapons">武器</button>
+                <button class="sub-tab-btn" data-sub="materials">材料</button>
+            </div>
+            <div id="warehouseContent"></div>
+        </div>
+    </div>
+
+    <!-- 市场视图 -->
+    <div class="view-container" id="viewMarket">
+        <div class="market-container" id="marketContainer">
+            <div class="sub-tab">
+                <button class="sub-tab-btn active" data-sub="sell">出售</button>
+                <button class="sub-tab-btn" data-sub="buy">购买</button>
+            </div>
+            <div id="marketContent"></div>
+        </div>
+    </div>
+
+    <!-- 战斗视图（占位） -->
+    <div class="view-container" id="viewCombat">
+        <div class="game-container" style="text-align:center; padding:3rem;">
+            <div style="font-size:2.5em;">⚔</div>
+            <div style="font-weight:700; margin:1rem;">战斗系统开发中</div>
+            <div style="font-size:0.9em; color:#8a9a90;">敬请期待后续更新</div>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+    // ---------- 常量 ----------
+    const W = 500, H = 400;
+    const materials = [
+        { id: 'apple', name: '苹果', cat: 'fruit', color: '#e04040', cname: '红', icon: '●', weight: 1.2, basePrice: 20, rarity: 1 },
+        { id: 'banana', name: '香蕉', cat: 'fruit', color: '#e8d040', cname: '黄', icon: '●', weight: 1.0, basePrice: 15, rarity: 1 },
+        { id: 'pear', name: '梨子', cat: 'fruit', color: '#a0c840', cname: '绿', icon: '●', weight: 1.1, basePrice: 18, rarity: 1 },
+        { id: 'grape', name: '葡萄', cat: 'fruit', color: '#8844aa', cname: '紫', icon: '●', weight: 0.9, basePrice: 22, rarity: 1 },
+        { id: 'mango', name: '芒果', cat: 'fruit', color: '#ffb347', cname: '橙', icon: '●', weight: 1.4, basePrice: 25, rarity: 1 },
+        { id: 'gold', name: '金子', cat: 'metal', color: '#e0b840', cname: '金', icon: '■', weight: 19.3, basePrice: 500, rarity: 5 },
+        { id: 'silver', name: '银子', cat: 'metal', color: '#c8c8d8', cname: '银', icon: '■', weight: 10.5, basePrice: 200, rarity: 4 },
+        { id: 'copper', name: '铜', cat: 'metal', color: '#d08050', cname: '铜', icon: '■', weight: 8.9, basePrice: 80, rarity: 3 },
+        { id: 'iron', name: '铁', cat: 'metal', color: '#889099', cname: '铁灰', icon: '■', weight: 7.8, basePrice: 50, rarity: 2 },
+        { id: 'titanium', name: '钛', cat: 'metal', color: '#7090b0', cname: '钛蓝', icon: '■', weight: 4.5, basePrice: 150, rarity: 4 },
+        { id: 'mythril', name: '秘银', cat: 'metal', color: '#a0c8e0', cname: '秘银', icon: '■', weight: 6.2, basePrice: 400, rarity: 5 },
+        { id: 'obsidian', name: '黑曜石', cat: 'metal', color: '#2c2c2c', cname: '暗黑', icon: '■', weight: 11.0, basePrice: 120, rarity: 3 },
+        { id: 'diamond', name: '钻石', cat: 'gem', color: '#e8e8f8', cname: '透白', icon: '◆', weight: 3.5, basePrice: 800, rarity: 5 },
+        { id: 'jade', name: '翡翠', cat: 'gem', color: '#50b878', cname: '翠绿', icon: '◆', weight: 2.9, basePrice: 300, rarity: 4 },
+        { id: 'ruby', name: '红宝石', cat: 'gem', color: '#e03050', cname: '深红', icon: '◆', weight: 4.0, basePrice: 450, rarity: 5 },
+        { id: 'sapphire', name: '蓝宝石', cat: 'gem', color: '#3050e0', cname: '宝蓝', icon: '◆', weight: 4.2, basePrice: 420, rarity: 5 },
+        { id: 'dragon_scale', name: '龙鳞', cat: 'special', color: '#c04040', cname: '龙鳞', icon: '⬠', weight: 8.5, basePrice: 1000, rarity: 5 },
+        { id: 'phoenix_feather', name: '凤羽', cat: 'special', color: '#ff8040', cname: '凤羽', icon: '✦', weight: 2.0, basePrice: 1200, rarity: 5 }
+    ];
+
+    // 全局状态
+    let state = {
+        stage: 0, gameDone: false, viewMode: false,
+        slots: [null, null, null],
+        embryo: null,
+        bladeStats: { sharpness: 5, durability: 5, toughness: 5 },
+        bladeColor: '#889099', bladeAccent: '#6a7a80',
+        bladeWeight: 0,
+        forgeTemp: 80, forgeTargetMin: 800, forgeTargetMax: 825,
+        forgeTimeLeft: 12, forgeTotalTime: 12,
+        initialPixels: 1,
+        grindTool: 'circle', grindOffsetX: 0, grindOffsetY: 0,
+        isGrinding: false, lastGrindPos: null,
+        hammerCount: 0, maxHammers: 8,
+        hammerNeedle: 50, hammerDir: 1, hammerSpeed: 2.2,
+        isHammering: false, hammerMin: 35, hammerMax: 65,
+        hammerTimeLeft: 60, hammerTotalTime: 60,
+        cracks: [],
+        savedSwords: [],       // 武器列表
+        materialInventory: [], // 材料列表 { id, quantity }
+        backupState: null,
+        currentViewIndex: -1,
+        currentTab: 'forge',
+        currentWarehouseSub: 'weapons',
+        currentMarketSub: 'sell'
+    };
+
+    let dom = {
+        canvasWrap: document.getElementById('canvasWrap'),
+        canvas: document.getElementById('mainCanvas'),
+        ctx: null,
+        controlsArea: document.getElementById('controlsArea'),
+        stageIndicator: document.getElementById('stageIndicator'),
+        toast: document.getElementById('toast'),
+        flashOverlay: document.getElementById('flashOverlay'),
+        viewForge: document.getElementById('viewForge'),
+        viewWarehouse: document.getElementById('viewWarehouse'),
+        viewMarket: document.getElementById('viewMarket'),
+        viewCombat: document.getElementById('viewCombat'),
+        warehouseContent: document.getElementById('warehouseContent'),
+        marketContent: document.getElementById('marketContent')
+    };
+    let offCanvas = document.createElement('canvas'); offCanvas.width = W; offCanvas.height = H;
+    let offCtx = offCanvas.getContext('2d');
+    let timers = { forgeTimer: null, hammerTimer: null, hammerAnimId: null, toastTimeout: null };
+    let rgbCache = {};
+
+    // 工具函数
+    function parseRGBCached(str) {
+        if (rgbCache[str]) return rgbCache[str];
+        let d = document.createElement('div'); d.style.color = str;
+        document.body.appendChild(d);
+        let c = getComputedStyle(d).color;
+        document.body.removeChild(d);
+        let m = c.match(/(\d+),\s*(\d+),\s*(\d+)/);
+        let res = m ? { r: +m[1], g: +m[2], b: +m[3] } : { r: 136, g: 136, b: 136 };
+        rgbCache[str] = res;
+        return res;
+    }
+    function clearRGBCache() { rgbCache = {}; }
+    function showToast(msg, duration=2000) {
+        if (timers.toastTimeout) clearTimeout(timers.toastTimeout);
+        dom.toast.textContent = msg;
+        dom.toast.style.display = 'block';
+        timers.toastTimeout = setTimeout(() => { dom.toast.style.display = 'none'; timers.toastTimeout = null; }, duration);
+    }
+    function triggerFlash() {
+        dom.flashOverlay.classList.add('active');
+        setTimeout(() => dom.flashOverlay.classList.remove('active'), 100);
+    }
+    function stopAllTimers() {
+        if (timers.forgeTimer) { clearInterval(timers.forgeTimer); timers.forgeTimer = null; }
+        if (timers.hammerTimer) { clearInterval(timers.hammerTimer); timers.hammerTimer = null; }
+        if (timers.hammerAnimId) { cancelAnimationFrame(timers.hammerAnimId); timers.hammerAnimId = null; }
+    }
+    function updateStageUI() {
+        let dots = dom.stageIndicator.querySelectorAll('.stage-dot');
+        let conns = dom.stageIndicator.querySelectorAll('.stage-connector');
+        dots.forEach((d,i)=>{
+            d.classList.remove('active','done');
+            if (state.viewMode || state.gameDone) d.classList.add('done');
+            else if (i < state.stage) d.classList.add('done');
+            else if (i === state.stage) d.classList.add('active');
+        });
+        conns.forEach((c,i)=>{
+            c.classList.remove('done');
+            if (state.viewMode || state.gameDone) c.classList.add('done');
+            else if (i < state.stage) c.classList.add('done');
+        });
+    }
+    // 加载/保存
+    function loadFromStorage() {
+        try {
+            let swords = localStorage.getItem('bladeMaster_savedSwords');
+            if (swords) state.savedSwords = JSON.parse(swords);
+            let mats = localStorage.getItem('bladeMaster_materialInventory');
+            if (mats) state.materialInventory = JSON.parse(mats);
+        } catch(e) { state.savedSwords = []; state.materialInventory = []; }
+    }
+    function persistToStorage() {
+        try {
+            localStorage.setItem('bladeMaster_savedSwords', JSON.stringify(state.savedSwords));
+            localStorage.setItem('bladeMaster_materialInventory', JSON.stringify(state.materialInventory));
+        } catch(e) { showToast('存储失败', 1500); }
+    }
+
+    // 刀胚图像
+    function drawInitialBlade() {
+        offCtx.clearRect(0,0,W,H);
+        offCtx.fillStyle = '#d0d8e0';
+        offCtx.fillRect(W/2-90, H/2+20, 180, 70);
+        offCtx.clearRect(W/2+70, H/2+20, 20, 70);
+        offCtx.fillStyle = '#d0d8e0';
+        offCtx.beginPath();
+        offCtx.moveTo(W/2+70, H/2+20);
+        offCtx.lineTo(W/2+105, H/2+55);
+        offCtx.lineTo(W/2+70, H/2+90);
+        offCtx.fill();
+        offCtx.fillStyle = '#d0d8e0';
+        offCtx.fillRect(W/2-110, H/2+35, 20, 40);
+        let data = offCtx.getImageData(0,0,W,H).data;
+        let cnt=0; for(let i=3;i<data.length;i+=4) if(data[i]>20) cnt++;
+        state.initialPixels = cnt||1;
+    }
+    drawInitialBlade();
+
+    function getBladePixels() {
+        let data = offCtx.getImageData(0,0,W,H).data;
+        let cnt=0; for(let i=3;i<data.length;i+=4) if(data[i]>20) cnt++;
+        return cnt;
+    }
+
+    function updateWeight() {
+        if (!state.embryo) return;
+        let remain = getBladePixels();
+        state.bladeWeight = Math.round(state.embryo.weight * (remain / Math.max(1,state.initialPixels)) * 100)/100;
+    }
+
+    function determineEmbryo(slots) {
+        let s = slots.filter(v=>v);
+        if (s.length!==3) return null;
+        let cats = s.map(m=>m.cat);
+        let fruitN=cats.filter(c=>c==='fruit').length;
+        let metalN=cats.filter(c=>c==='metal').length;
+        let gemN=cats.filter(c=>c==='gem').length;
+        let specialN=cats.filter(c=>c==='special').length;
+        let mainCat='mixed', name='混合胚', base='#998877', accent='#776655';
+        let mainMat=null, accentMat=null;
+        let counts={fruit:fruitN,metal:metalN,gem:gemN,special:specialN};
+        let max=Math.max(fruitN,metalN,gemN,specialN);
+        let dom=Object.entries(counts).filter(([,v])=>v===max);
+        if (max>=2 && dom.length===1) {
+            mainCat=dom[0][0];
+            let catSlots=s.filter(m=>m.cat===mainCat);
+            let freq={}; catSlots.forEach(m=>freq[m.id]=(freq[m.id]||0)+1);
+            let best=Object.keys(freq).sort((a,b)=>freq[b]-freq[a])[0];
+            mainMat=materials.find(m=>m.id===best);
+            base=mainMat.color;
+            let other=s.find(m=>m.cat!==mainCat);
+            accentMat=other||mainMat;
+            accent=accentMat.color;
+        } else if (max===2 && dom.length===2) {
+            mainMat=s[0];
+            base=mainMat.color;
+            accentMat=s.find(m=>m.id!==mainMat.id)||s[1];
+            accent=accentMat.color;
+        } else {
+            mainMat=s[0];
+            base=mainMat.color;
+            accentMat=s[1]||s[0];
+            accent=accentMat.color;
+        }
+        if (mainCat==='fruit') name='水果胚';
+        else if (mainCat==='metal') name='金属胚';
+        else if (mainCat==='gem') name='宝石胚';
+        else if (mainCat==='special') name='异材胚';
+        if (mainMat && max>=2) name=mainMat.cname+'胚';
+        let tMid = mainCat==='fruit'?320: mainCat==='metal'?1050: mainCat==='gem'?1300:1100;
+        let tRange = 30+Math.floor(Math.random()*16);
+        let tMin = tMid - Math.floor(tRange/2);
+        let tMax = tMin + tRange;
+        let timeSec = mainCat==='fruit'?9: mainCat==='metal'?16: mainCat==='gem'?22:18;
+        let totalWeight = s.reduce((sum,m)=>sum+m.weight,0);
+        return {
+            name, mainCat, baseColor: base, accentColor: accent,
+            mainMat, accentMat, forgeTempMin: tMin, forgeTempMax: tMax,
+            timeSec, weight: totalWeight,
+            rarity: Math.max(...s.map(m=>m.rarity))
+        };
+    }
+
+    function getBladeBounds() {
+        let data = offCtx.getImageData(0,0,W,H).data;
+        let minX=W, minY=H, maxX=0, maxY=0, found=false;
+        for(let y=0;y<H;y++) for(let x=0;x<W;x++) if(data[(y*W+x)*4+3]>20) {
+            if(x<minX) minX=x; if(x>maxX) maxX=x; if(y<minY) minY=y; if(y>maxY) maxY=y; found=true;
+        }
+        return found ? {minX,minY,maxX,maxY} : {minX:W/2-90,minY:H/2+20,maxX:W/2+105,maxY:H/2+90};
+    }
+
+    function addCrack() {
+        let bounds = getBladeBounds();
+        let dx = (state.stage===2 && !state.gameDone) ? state.grindOffsetX : 0;
+        let dy = (state.stage===2 && !state.gameDone) ? state.grindOffsetY : 0;
+        let l=bounds.minX+dx, r=bounds.maxX+dx, t=bounds.minY+dy, b2=bounds.maxY+dy;
+        let startX = l + Math.random()*(r-l);
+        let startY = t + Math.random()*(b2-t);
+        let segments=[]; let sx=startX, sy=startY;
+        let segCount = 3+Math.floor(Math.random()*4);
+        for(let i=0;i<segCount;i++) {
+            sx += (Math.random()-0.5)*28;
+            sy += Math.random()*20+4;
+            sx = Math.max(l-2,Math.min(r+2,sx));
+            sy = Math.min(b2+2,sy);
+            segments.push({x:sx,y:sy});
+        }
+        state.cracks.push({x1:startX,y1:startY,x2:segments[segments.length-1].x,y2:segments[segments.length-1].y,segments});
+        state.bladeStats.sharpness = Math.max(0, state.bladeStats.sharpness - Math.floor(Math.random()*3)-1);
+        state.bladeStats.durability = Math.max(0, state.bladeStats.durability - Math.floor(Math.random()*2)-1);
+        state.bladeStats.toughness = Math.max(0, state.bladeStats.toughness - Math.floor(Math.random()*3)-1);
+    }
+
+    function drawCracks(ctx) {
+        if(state.cracks.length===0) return;
+        ctx.save();
+        ctx.strokeStyle='#2a0808';
+        ctx.lineWidth=2;
+        ctx.globalAlpha=0.85;
+        state.cracks.forEach(crack=>{
+            ctx.beginPath();
+            ctx.moveTo(crack.x1,crack.y1);
+            if(crack.segments) crack.segments.forEach(seg=>ctx.lineTo(seg.x,seg.y));
+            else ctx.lineTo(crack.x2,crack.y2);
+            ctx.stroke();
+        });
+        ctx.restore();
+    }
+
+    function drawHilt(ctx) {
+        let bx = W/2-90, by = H/2+20;
+        ctx.save();
+        ctx.fillStyle='#3a2a18';
+        ctx.strokeStyle='#5a4a30';
+        ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.moveTo(bx-20+5, by+10);
+        ctx.lineTo(bx-20+20-5, by+10);
+        ctx.arcTo(bx-20+20, by+10, bx-20+20, by+10+5, 5);
+        ctx.lineTo(bx-20+20, by+10+50-5);
+        ctx.arcTo(bx-20+20, by+10+50, bx-20+20-5, by+10+50, 5);
+        ctx.lineTo(bx-20+5, by+10+50);
+        ctx.arcTo(bx-20, by+10+50, bx-20, by+10+50-5, 5);
+        ctx.lineTo(bx-20, by+10+5);
+        ctx.arcTo(bx-20, by+10, bx-20+5, by+10, 5);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle='#4a3020';
+        ctx.fillRect(bx-28, by+8, 8, 54);
+        ctx.fill();
+        ctx.strokeRect(bx-28, by+8, 8, 54);
+        ctx.restore();
+    }
+
+    function draw() {
+        if (!dom.ctx) dom.ctx = dom.canvas.getContext('2d');
+        let ctx = dom.ctx;
+        ctx.clearRect(0,0,W,H);
+        ctx.fillStyle='#0c1a20';
+        ctx.fillRect(0,0,W,H);
+        ctx.fillStyle='#0b1f26';
+        ctx.strokeStyle='#3b8b8f';
+        ctx.lineWidth=3;
+        // 铁砧背景（矩形圆角）
+        ctx.beginPath();
+        ctx.moveTo(W/2-130+16, H-50);
+        ctx.lineTo(W/2+130-16, H-50);
+        ctx.arcTo(W/2+130, H-50, W/2+130, H-50-16, 16);
+        ctx.lineTo(W/2+130, H-50-60+16);
+        ctx.arcTo(W/2+130, H-50-60, W/2+130-16, H-50-60, 16);
+        ctx.lineTo(W/2-130+16, H-50-60);
+        ctx.arcTo(W/2-130, H-50-60, W/2-130, H-50-60+16, 16);
+        ctx.lineTo(W/2-130, H-50-16);
+        ctx.arcTo(W/2-130, H-50, W/2-130+16, H-50, 16);
+        ctx.fill();
+        ctx.stroke();
+
+        // 绘制刀身（在铁砧上方）
+        if ((state.stage>=1 || state.gameDone || state.viewMode) && !(state.viewMode && !state.backupState)) {
+            let offData = offCtx.getImageData(0,0,W,H);
+            let mainData = ctx.getImageData(0,0,W,H);
+            let bc = parseRGBCached(state.bladeColor), ac = parseRGBCached(state.bladeAccent);
+            let mix = Math.min(1, state.hammerCount/state.maxHammers)*0.45;
+            for(let i=0;i<offData.data.length;i+=4) {
+                if(offData.data[i+3]>20) {
+                    mainData.data[i] = Math.min(255, bc.r + (ac.r-bc.r)*mix);
+                    mainData.data[i+1] = Math.min(255, bc.g + (ac.g-bc.g)*mix);
+                    mainData.data[i+2] = Math.min(255, bc.b + (ac.b-bc.b)*mix);
+                    mainData.data[i+3] = offData.data[i+3];
+                }
+            }
+            if (state.stage===2 && !state.gameDone && !state.viewMode) ctx.putImageData(mainData, state.grindOffsetX, state.grindOffsetY);
+            else ctx.putImageData(mainData, 0, 0);
+            drawHilt(ctx);
+            drawCracks(ctx);
+            if (state.stage===2 && !state.gameDone && !state.viewMode) {
+                ctx.save();
+                ctx.globalAlpha=0.75;
+                ctx.strokeStyle='#f6c978';
+                ctx.lineWidth=2.5;
+                let cx=W/2, cy=H/2-20, size=22;
+                if(state.grindTool==='circle') { ctx.beginPath(); ctx.arc(cx,cy,size,0,Math.PI*2); ctx.stroke(); }
+                else if(state.grindTool==='rect') { ctx.beginPath(); ctx.rect(cx-size*1.2, cy-size*0.8, size*2.4, size*1.6); ctx.stroke(); }
+                else if(state.grindTool==='triangle') { ctx.beginPath(); ctx.moveTo(cx, cy-size*1.2); ctx.lineTo(cx-size*1.1, cy+size*0.7); ctx.lineTo(cx+size*1.1, cy+size*0.7); ctx.closePath(); ctx.stroke(); }
+                ctx.restore();
+            }
+        }
+        if(state.stage===0 && !state.viewMode) {
+            ctx.fillStyle='rgba(198,233,240,0.1)'; ctx.font='15px sans-serif'; ctx.textAlign='center';
+            ctx.fillText('选择3个材料放入熔炉', W/2, H/2-20);
+        }
+        if(state.stage===1 && !state.gameDone && !state.viewMode) {
+            ctx.fillStyle='#f6c978'; ctx.font='bold 18px sans-serif';
+            ctx.fillText('熔炼中 '+state.forgeTimeLeft.toFixed(1)+'s', W/2, H/2-50);
+        }
+        if(state.gameDone || state.viewMode) {
+            ctx.fillStyle='#f6c978'; ctx.font='bold 22px sans-serif';
+            ctx.fillText(state.viewMode?'历史刀具':'锻造完成', W/2, H/2-100);
+        }
+    }
+
+    function calculateValue() {
+        let base = (state.bladeStats.sharpness*2 + state.bladeStats.durability*1.8 + state.bladeStats.toughness*2.2)*10;
+        base += state.bladeWeight*5;
+        base -= state.cracks.length*40;
+        return Math.max(0, Math.floor(base));
+    }
+
+    // 锻造流程
+    function startForge() {
+        if(state.stage!==0 || state.gameDone || state.viewMode) return;
+        if(state.slots.filter(s=>s).length!==3) return;
+        stopAllTimers();
+        let embryo = determineEmbryo(state.slots);
+        if(!embryo) return;
+        state.embryo = embryo;
+        state.forgeTargetMin = embryo.forgeTempMin;
+        state.forgeTargetMax = embryo.forgeTempMax;
+        state.forgeTotalTime = embryo.timeSec;
+        state.forgeTimeLeft = state.forgeTotalTime;
+        state.forgeTemp = 50+Math.floor(Math.random()*51);
+        state.bladeColor = embryo.baseColor;
+        state.bladeAccent = embryo.accentColor;
+        state.bladeStats = { sharpness: 8, durability: 8, toughness: 8 };
+        state.bladeWeight = embryo.weight;
+        state.cracks = [];
+        clearRGBCache();
+        drawInitialBlade();
+        state.stage=1; state.gameDone=false; state.viewMode=false;
+        state.grindOffsetX=0; state.grindOffsetY=0; state.currentViewIndex=-1;
+        // 锤打次数基于材料品质和重量比（初始重量/目标重量，初始重量为胚胎重量，目标重量约为0.3胚胎重量）
+        let targetWeight = state.embryo.weight * 0.3;
+        let weightRatio = Math.min(1, state.bladeWeight / targetWeight);
+        let baseHammers = 6 + state.embryo.rarity; // 稀有度越高需要更多锤打
+        state.maxHammers = Math.floor(baseHammers * (0.8 + weightRatio*0.4));
+        state.maxHammers = Math.min(16, Math.max(6, state.maxHammers));
+        updateStageUI(); updateUI(); draw();
+        dom.canvasWrap.classList.add('forge-glow');
+        dom.canvasWrap.classList.remove('grind-glow','hammer-glow');
+        triggerFlash();
+        startForgeTimer();
+    }
+
+    function startForgeTimer() {
+        if(timers.forgeTimer) clearInterval(timers.forgeTimer);
+        timers.forgeTimer = setInterval(()=>{
+            if(state.stage!==1 || state.gameDone || state.viewMode) { clearInterval(timers.forgeTimer); timers.forgeTimer=null; return; }
+            let coolRate = 1+(state.forgeTemp/400);
+            state.forgeTemp = Math.round(Math.max(30, state.forgeTemp - coolRate));
+            let progress = state.forgeTimeLeft/state.forgeTotalTime;
+            let currentRange = 14+Math.round(36*progress);
+            let mid = (state.embryo.forgeTempMin+state.embryo.forgeTempMax)/2;
+            state.forgeTargetMin = Math.round(mid - currentRange/2);
+            state.forgeTargetMax = Math.round(mid + currentRange/2);
+            state.forgeTimeLeft = Math.max(0, state.forgeTimeLeft-1);
+            if(state.forgeTimeLeft<=0) { clearInterval(timers.forgeTimer); timers.forgeTimer=null; finishForge(); }
+            updateUI(); draw();
+        },1000);
+    }
+
+    function adjTemp(delta) {
+        if(state.stage!==1 || state.gameDone || state.viewMode) return;
+        let factor = delta>0 ? (1+(1-state.forgeTemp/1500)*1.2) : (1+(state.forgeTemp/1500)*0.8);
+        state.forgeTemp = Math.round(Math.max(30, Math.min(1495, state.forgeTemp + Math.round(delta*factor))));
+        updateUI(); draw();
+    }
+
+    function finishForge() {
+        let inZone = state.forgeTemp>=state.forgeTargetMin && state.forgeTemp<=state.forgeTargetMax;
+        let dist = Math.abs(state.forgeTemp - (state.forgeTargetMin+state.forgeTargetMax)/2);
+        let rangeHalf = Math.max(1,(state.forgeTargetMax-state.forgeTargetMin)/2);
+        let forgeQuality = inZone ? Math.max(0.5,1-dist/rangeHalf) : Math.max(0.15,0.7-dist/180);
+        state.bladeStats.sharpness = Math.round(Math.max(1, state.bladeStats.sharpness*forgeQuality));
+        state.bladeStats.durability = Math.round(Math.max(1, state.bladeStats.durability*forgeQuality));
+        state.bladeStats.toughness = Math.round(Math.max(1, state.bladeStats.toughness*forgeQuality));
+        state.stage=2;
+        updateWeight();
+        dom.canvasWrap.classList.remove('forge-glow');
+        dom.canvasWrap.classList.add('grind-glow');
+        updateStageUI(); updateUI(); draw(); triggerFlash();
+        showToast('拖动刀胚进行打磨',2500);
+    }
+
+    // 打磨交互
+    function getCanvasPos(e) {
+        let rect = dom.canvas.getBoundingClientRect();
+        let clientX = e.clientX!==undefined ? e.clientX : (e.touches?e.touches[0].clientX:0);
+        let clientY = e.clientY!==undefined ? e.clientY : (e.touches?e.touches[0].clientY:0);
+        let scale = rect.width/W;
+        return { x: (clientX-rect.left)/scale, y: (clientY-rect.top)/scale };
+    }
+    function startGrind(pos) {
+        if(state.stage!==2 || state.gameDone || state.viewMode) return;
+        state.isGrinding=true; state.lastGrindPos=pos;
+    }
+    function moveGrind(pos) {
+        if(!state.isGrinding || state.stage!==2 || state.gameDone || state.viewMode) return;
+        let dx = pos.x - state.lastGrindPos.x;
+        let dy = pos.y - state.lastGrindPos.y;
+        state.grindOffsetX += dx; state.grindOffsetY += dy;
+        state.grindOffsetX = Math.max(-W/2, Math.min(W/2, state.grindOffsetX));
+        state.grindOffsetY = Math.max(-H/2, Math.min(H/2, state.grindOffsetY));
+        state.lastGrindPos = pos;
+        let toolX = W/2 - state.grindOffsetX;
+        let toolY = H/2 - 20 - state.grindOffsetY;
+        if(getBladePixels() <= Math.max(1, Math.floor(state.initialPixels*0.1))) { showToast('刀胚已到最小限度',1500); return; }
+        offCtx.save();
+        offCtx.globalCompositeOperation='destination-out';
+        offCtx.fillStyle='#000';
+        let size=22;
+        if(state.grindTool==='circle') { offCtx.beginPath(); offCtx.arc(toolX,toolY,size,0,Math.PI*2); offCtx.fill(); }
+        else if(state.grindTool==='rect') { offCtx.fillRect(toolX-size*1.2, toolY-size*0.8, size*2.4, size*1.6); }
+        else if(state.grindTool==='triangle') { offCtx.beginPath(); offCtx.moveTo(toolX, toolY-size*1.2); offCtx.lineTo(toolX-size*1.1, toolY+size*0.7); offCtx.lineTo(toolX+size*1.1, toolY+size*0.7); offCtx.closePath(); offCtx.fill(); }
+        offCtx.restore();
+        updateWeight();
+        draw();
+        let wEl = document.querySelector('#controlsArea .stat-val');
+        if(wEl) wEl.textContent = state.bladeWeight.toFixed(1)+'kg';
+    }
+    function endGrind() { state.isGrinding=false; state.lastGrindPos=null; }
+
+    function finishGrind() {
+        if(state.stage!==2 || state.gameDone || state.viewMode) return;
+        updateWeight();
+        state.stage=3;
+        state.hammerCount=0;
+        state.hammerNeedle = 20+Math.random()*20;
+        state.hammerDir=1;
+        state.hammerSpeed = 2.2+Math.random()*2;
+        state.hammerTimeLeft = state.hammerTotalTime;
+        state.isHammering=false;
+        state.grindOffsetX=0; state.grindOffsetY=0;
+        dom.canvasWrap.classList.remove('grind-glow');
+        dom.canvasWrap.classList.add('hammer-glow');
+        if(state.embryo) {
+            if(state.embryo.mainCat==='fruit') { state.hammerMin=15; state.hammerMax=38; }
+            else if(state.embryo.mainCat==='metal') { state.hammerMin=38; state.hammerMax=68; }
+            else if(state.embryo.mainCat==='gem') { state.hammerMin=50; state.hammerMax=80; }
+            else { state.hammerMin=30; state.hammerMax=60; }
+        }
+        stopAllTimers();
+        updateStageUI(); updateUI(); draw(); triggerFlash();
+        startHammerAnim();
+        startHammerTimer();
+        showToast('锤打开始，60秒内完成',2500);
+    }
+
+    function startHammerAnim() {
+        if(timers.hammerAnimId) cancelAnimationFrame(timers.hammerAnimId);
+        function anim(){
+            if(state.stage!==3 || state.gameDone || state.viewMode) { timers.hammerAnimId=null; return; }
+            if(!state.isHammering) {
+                state.hammerNeedle += state.hammerDir * state.hammerSpeed;
+                if(state.hammerNeedle>=92) { state.hammerNeedle=92; state.hammerDir=-1; }
+                if(state.hammerNeedle<=8) { state.hammerNeedle=8; state.hammerDir=1; }
+                let needleEl = document.getElementById('forceNeedle');
+                if(needleEl) needleEl.style.left = state.hammerNeedle+'%';
+            }
+            timers.hammerAnimId = requestAnimationFrame(anim);
+        }
+        timers.hammerAnimId = requestAnimationFrame(anim);
+    }
+    function startHammerTimer() {
+        if(timers.hammerTimer) clearInterval(timers.hammerTimer);
+        timers.hammerTimer = setInterval(()=>{
+            if(state.stage!==3 || state.gameDone || state.viewMode) { clearInterval(timers.hammerTimer); timers.hammerTimer=null; return; }
+            state.hammerTimeLeft = Math.max(0, state.hammerTimeLeft-1);
+            let span = document.querySelector('#controlsArea .force-wrap span');
+            if(span) span.innerHTML = `剩余 ${state.hammerTimeLeft}秒`;
+            if(state.hammerTimeLeft<=0) {
+                clearInterval(timers.hammerTimer);
+                if(timers.hammerAnimId) cancelAnimationFrame(timers.hammerAnimId);
+                state.gameDone=true;
+                dom.canvasWrap.classList.remove('hammer-glow');
+                updateStageUI(); updateUI(); draw(); triggerFlash();
+                showToast('时间到！刀已冷却',3000);
+            }
+        },1000);
+    }
+    function doHammer() {
+        if(state.stage!==3 || state.gameDone || state.viewMode || state.isHammering || state.hammerCount>=state.maxHammers) return;
+        state.isHammering=true;
+        let needleVal = state.hammerNeedle;
+        let inZone = needleVal>=state.hammerMin && needleVal<=state.hammerMax;
+        let dist = Math.abs(needleVal - (state.hammerMin+state.hammerMax)/2);
+        let rangeHalf = Math.max(1,(state.hammerMax-state.hammerMin)/2);
+        let quality;
+        if(inZone) quality = Math.max(0.4, 1-dist/rangeHalf);
+        else if(needleVal < state.hammerMin-12) quality=0.05;
+        else if(needleVal > state.hammerMax+12) { quality=-0.5; addCrack(); }
+        else if(needleVal < state.hammerMin) quality=0.25;
+        else { quality=0.2; if(Math.random()<0.35) addCrack(); }
+        state.bladeStats.sharpness = Math.round(Math.max(0, state.bladeStats.sharpness + quality*4));
+        state.bladeStats.durability = Math.round(Math.max(0, state.bladeStats.durability + quality*3));
+        state.bladeStats.toughness = Math.round(Math.max(0, state.bladeStats.toughness + quality*2.5));
+        if(state.embryo && quality>0.05) {
+            let bc = parseRGBCached(state.embryo.baseColor);
+            let cur = parseRGBCached(state.bladeColor);
+            let blend = 0.2 + Math.max(0,quality)*0.3;
+            state.bladeColor = `rgb(${Math.round(cur.r+(bc.r-cur.r)*blend)},${Math.round(cur.g+(bc.g-cur.g)*blend)},${Math.round(cur.b+(bc.b-cur.b)*blend)})`;
+            if(state.embryo.accentColor !== state.embryo.baseColor) {
+                let ac = parseRGBCached(state.embryo.accentColor);
+                let acur = parseRGBCached(state.bladeAccent);
+                state.bladeAccent = `rgb(${Math.round(acur.r+(ac.r-acur.r)*blend*0.8)},${Math.round(acur.g+(ac.g-acur.g)*blend*0.8)},${Math.round(acur.b+(ac.b-acur.b)*blend*0.8)})`;
+            }
+            clearRGBCache();
+        }
+        state.hammerCount++;
+        updateUI(); draw();
+        if(quality<0) showToast('力度过大！裂缝产生！',2000);
+        else if(quality<0.1) showToast('力度太小，几乎无效',1500);
+        if(state.hammerCount>=state.maxHammers) {
+            setTimeout(()=>{
+                if(timers.hammerAnimId) cancelAnimationFrame(timers.hammerAnimId);
+                if(timers.hammerTimer) clearInterval(timers.hammerTimer);
+                state.gameDone=true;
+                dom.canvasWrap.classList.remove('hammer-glow');
+                updateStageUI(); updateUI(); draw(); triggerFlash();
+                showToast('锻造完成！',3000);
+            },400);
+        }
+        setTimeout(()=>{ state.isHammering=false; },300);
+    }
+
+    // UI渲染
+    function updateUI() {
+        dom.controlsArea.innerHTML = '';
+        if(state.viewMode) {
+            let val = calculateValue();
+            dom.controlsArea.innerHTML = `
+                <div style="text-align:center;font-weight:700;color:#f6c978;font-size:1.05em;">查看历史刀</div>
+                <div class="stats">
+                  <div class="stat">锋利<span class="stat-val">${state.bladeStats.sharpness}</span></div>
+                  <div class="stat">耐久<span class="stat-val">${state.bladeStats.durability}</span></div>
+                  <div class="stat">韧性<span class="stat-val">${state.bladeStats.toughness}</span></div>
+                  <div class="stat">重量<span class="stat-val">${state.bladeWeight.toFixed(1)}kg</span></div>
+                  <div class="stat" style="background:#2a3a18;">价值<span class="stat-val" style="color:#f6c978;">${val}</span></div>
+                </div>
+                <button class="btn btn-secondary" id="btnCloseHistory">收起</button>`;
+            document.getElementById('btnCloseHistory').addEventListener('click', closeHistoryView);
+            return;
+        }
+        if(state.gameDone) {
+            let val = calculateValue();
+            dom.controlsArea.innerHTML = `
+                <div style="text-align:center;font-weight:700;color:#f6c978;font-size:1.05em;">${state.embryo?state.embryo.name:'刀'} 锻造完成</div>
+                <div class="stats">
+                  <div class="stat">锋利<span class="stat-val">${state.bladeStats.sharpness}</span></div>
+                  <div class="stat">耐久<span class="stat-val">${state.bladeStats.durability}</span></div>
+                  <div class="stat">韧性<span class="stat-val">${state.bladeStats.toughness}</span></div>
+                  <div class="stat">重量<span class="stat-val">${state.bladeWeight.toFixed(1)}kg</span></div>
+                  <div class="stat" style="background:#2a3a18;">价值<span class="stat-val" style="color:#f6c978;">${val}</span></div>
+                </div>
+                ${state.cracks.length>0?`<div class="crack-indicator">刀身有 ${state.cracks.length} 条裂缝</div>`:''}
+                <button class="btn" id="btnSave">保存此刀</button>
+                <button class="btn btn-secondary" id="btnReset">重新锻造</button>`;
+            document.getElementById('btnSave').addEventListener('click', saveSword);
+            document.getElementById('btnReset').addEventListener('click', resetGame);
+            return;
+        }
+        if(state.stage===0) {
+            let html = '<div class="slot-row">';
+            for(let i=0;i<3;i++) {
+                let f = state.slots[i];
+                html += `<div class="slot${f?' filled':''}" id="slot${i}">${f?`<span style="color:${f.color}">${f.icon}</span> ${f.name}`:'槽'+(i+1)}</div>`;
+            }
+            html += '</div><div class="mat-shelf">';
+            materials.forEach(m=>{
+                html += `<div class="mat-item" id="mat-${m.id}" style="--mat-color:${m.color};"><span class="mat-icon" style="color:${m.color}">${m.icon}</span><span class="mat-label">${m.name}</span></div>`;
+            });
+            html += '</div><button class="btn" id="btnForge" '+(state.slots.filter(s=>s).length===3?'':'disabled')+'>投入熔炉</button>';
+            dom.controlsArea.innerHTML = html;
+            for(let i=0;i<3;i++) document.getElementById('slot'+i).addEventListener('click',()=>clearSlot(i));
+            materials.forEach(m=>{ let el = document.getElementById('mat-'+m.id); if(el) el.addEventListener('click',()=>pickMat(m.id)); });
+            document.getElementById('btnForge')?.addEventListener('click',startForge);
+        } else if(state.stage===1) {
+            let tempColor = (state.forgeTemp>=state.forgeTargetMin && state.forgeTemp<=state.forgeTargetMax)?'#7d9b4e':'#e0553d';
+            dom.controlsArea.innerHTML = `
+                <div class="temp-wrap">
+                  <div class="temp-display" style="color:${tempColor}">${state.forgeTemp}°C</div>
+                  <div class="temp-bar"><div class="temp-fill" style="width:${state.forgeTemp/1500*100}%"></div><div class="temp-zone" style="left:${state.forgeTargetMin/1500*100}%;width:${(state.forgeTargetMax-state.forgeTargetMin)/1500*100}%"></div></div>
+                  <div style="font-size:0.7em;">目标 ${state.forgeTargetMin}~${state.forgeTargetMax}°C</div>
+                  <div class="time-bar"><div class="time-fill" style="width:${(state.forgeTimeLeft/state.forgeTotalTime)*100}%"></div></div>
+                  <div style="display:flex;gap:8px;justify-content:center;">
+                    <button class="btn btn-sm btn-secondary" id="btnDecBig">-50</button>
+                    <button class="btn btn-sm btn-secondary" id="btnDecSmall">-10</button>
+                    <button class="btn btn-sm btn-secondary" id="btnIncSmall">+10</button>
+                    <button class="btn btn-sm btn-secondary" id="btnIncBig">+50</button>
+                  </div>
+                </div>`;
+            document.getElementById('btnDecBig')?.addEventListener('click',()=>adjTemp(-50));
+            document.getElementById('btnDecSmall')?.addEventListener('click',()=>adjTemp(-10));
+            document.getElementById('btnIncSmall')?.addEventListener('click',()=>adjTemp(10));
+            document.getElementById('btnIncBig')?.addEventListener('click',()=>adjTemp(50));
+        } else if(state.stage===2) {
+            dom.controlsArea.innerHTML = `
+                <div class="tool-select" id="toolSelect">
+                  <div class="tool-btn ${state.grindTool==='circle'?'active-tool':''}" data-tool="circle"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor"/></svg></div>
+                  <div class="tool-btn ${state.grindTool==='rect'?'active-tool':''}" data-tool="rect"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="currentColor"/></svg></div>
+                  <div class="tool-btn ${state.grindTool==='triangle'?'active-tool':''}" data-tool="triangle"><svg viewBox="0 0 24 24"><polygon points="12,3 2,21 22,21" fill="currentColor"/></svg></div>
+                </div>
+                <div class="stats"><div class="stat">当前重量<span class="stat-val">${state.bladeWeight.toFixed(1)}kg</span></div></div>
+                <button class="btn" id="btnFinishGrind">完成打磨，开始锤打</button>
+                <div style="font-size:0.7em;color:#8a9a90;text-align:center;">拖动刀胚进行打磨</div>`;
+            document.querySelectorAll('.tool-btn').forEach(btn=>btn.addEventListener('click',function(){
+                state.grindTool=this.dataset.tool; updateUI(); draw();
+            }));
+            document.getElementById('btnFinishGrind')?.addEventListener('click',finishGrind);
+        } else if(state.stage===3) {
+            dom.controlsArea.innerHTML = `
+                <div class="force-wrap">
+                  <div style="font-weight:700;">锤打 (${state.hammerCount}/${state.maxHammers}) <span style="color:#e0553d;">剩余 ${state.hammerTimeLeft}秒</span></div>
+                  <div class="force-bar"><div class="force-zone" style="left:${state.hammerMin}%;width:${state.hammerMax-state.hammerMin}%"></div><div class="force-needle" id="forceNeedle" style="left:${state.hammerNeedle}%"></div></div>
+                  <div style="font-size:0.7em;">最佳 ${state.hammerMin}%~${state.hammerMax}% | 力过大产生裂缝</div>
+                  <button class="btn" id="btnHammer">锤打</button>
+                  ${state.cracks.length>0?`<div class="crack-indicator">已有 ${state.cracks.length} 条裂缝</div>`:''}
+                  <div class="stats">
+                    <div class="stat">锋利<span class="stat-val">${state.bladeStats.sharpness}</span></div><div class="stat">耐久<span class="stat-val">${state.bladeStats.durability}</span></div>
+                    <div class="stat">韧性<span class="stat-val">${state.bladeStats.toughness}</span></div><div class="stat">重量<span class="stat-val">${state.bladeWeight.toFixed(1)}kg</span></div>
+                  </div>
+                </div>`;
+            document.getElementById('btnHammer')?.addEventListener('click',doHammer);
+        }
+    }
+
+    function clearSlot(i) { if(state.stage!==0 || state.gameDone || state.viewMode) return; state.slots[i]=null; updateUI(); draw(); }
+    function pickMat(id) {
+        if(state.stage!==0 || state.gameDone || state.viewMode) return;
+        let mat = materials.find(m=>m.id===id);
+        if(!mat) return;
+        let empty = state.slots.findIndex(s=>!s);
+        if(empty>=0) state.slots[empty]=mat;
+        else { state.slots[0]=state.slots[1]; state.slots[1]=state.slots[2]; state.slots[2]=mat; }
+        updateUI(); draw();
+    }
+
+    function saveSword() {
+        if(!state.gameDone || !state.embryo || state.viewMode) return;
+        let imageData = offCanvas.toDataURL();
+        let value = calculateValue();
+        state.savedSwords.push({
+            name: state.embryo.name,
+            color: state.bladeColor,
+            accent: state.bladeAccent,
+            stats: {...state.bladeStats},
+            weight: state.bladeWeight,
+            cracks: [...state.cracks],
+            image: imageData,
+            date: new Date().toLocaleString(),
+            value: value
+        });
+        persistToStorage();
+        showToast('刀已保存到仓库！',2000);
+        if(state.currentTab==='warehouse') renderWarehouse();
+    }
+
+    function resetGame() {
+        stopAllTimers();
+        state.stage=0; state.gameDone=false; state.viewMode=false; state.backupState=null;
+        state.slots=[null,null,null]; state.embryo=null;
+        state.bladeColor='#889099'; state.bladeAccent='#6a7a80'; state.bladeWeight=0;
+        state.bladeStats={sharpness:5,durability:5,toughness:5};
+        state.cracks=[]; state.hammerCount=0; state.hammerTimeLeft=state.hammerTotalTime;
+        state.isHammering=false; state.grindOffsetX=0; state.grindOffsetY=0; state.isGrinding=false;
+        state.currentViewIndex=-1; clearRGBCache();
+        drawInitialBlade();
+        dom.canvasWrap.classList.remove('forge-glow','grind-glow','hammer-glow');
+        updateStageUI(); updateUI(); draw(); triggerFlash();
+    }
+
+    // 仓库（武器、材料）
+    function renderWarehouse() {
+        let content = dom.warehouseContent;
+        if(state.currentWarehouseSub==='weapons') {
+            let weapons = state.savedSwords;
+            if(weapons.length===0) {
+                content.innerHTML = '<div class="warehouse-empty"><span class="empty-icon">🗡</span>仓库空空如也<br><span style="font-size:0.7em;">打造你的第一把刀吧</span></div>';
+                return;
+            }
+            let totalValue = weapons.reduce((s,w)=>s+(w.value||0),0);
+            let html = `<div class="warehouse-stats"><div class="warehouse-stat">收藏<span class="ws-val">${weapons.length}</span>把</div><div class="warehouse-stat">总价值<span class="ws-val">💰${totalValue}</span></div></div><div class="warehouse-grid">`;
+            weapons.forEach((sw,i)=>{
+                let crackCount = sw.cracks?sw.cracks.length:0;
+                html += `<div class="card" data-index="${i}">
+                    <div class="card-img-wrap"><img src="${sw.image}" alt="${sw.name}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%2280%22><rect fill=%22%230c1a20%22 width=%22100%22 height=%2280%22/><text x=%2250%22 y=%2245%22 text-anchor=%22middle%22 fill=%22%235a7a7a%22 font-size=%2212%22>无预览</text></svg>';"></div>
+                    <div class="card-info">
+                        <div class="card-name" style="color:${sw.color||'#c6e9f0'};">${sw.name}</div>
+                        <div class="card-stats"><span>锋${sw.stats.sharpness}</span><span>耐${sw.stats.durability}</span><span>韧${sw.stats.toughness}</span><span>重${(sw.weight||0).toFixed(1)}kg</span></div>
+                        <div class="card-value">💰 ${sw.value||0}</div>
+                        ${crackCount>0?`<div class="card-crack">⚠ ${crackCount}条裂缝</div>`:''}
+                        <div class="card-actions"><button class="view-sword-btn" data-index="${i}">🔍 查看</button></div>
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+            content.innerHTML = html;
+            content.querySelectorAll('.view-sword-btn').forEach(btn=>{
+                btn.addEventListener('click',()=>viewHistorySword(parseInt(btn.dataset.index)));
+            });
+        } else if(state.currentWarehouseSub==='materials') {
+            let inv = state.materialInventory;
+            if(inv.length===0) {
+                content.innerHTML = '<div class="warehouse-empty"><span class="empty-icon">📦</span>暂无材料<br><span style="font-size:0.7em;">前往市场购买</span></div>';
+                return;
+            }
+            let html = '<div class="warehouse-grid">';
+            inv.forEach((item,idx)=>{
+                let mat = materials.find(m=>m.id===item.id);
+                if(!mat) return;
+                html += `<div class="card">
+                    <div class="card-info">
+                        <div class="card-name" style="color:${mat.color};">${mat.name}</div>
+                        <div class="card-stats"><span>数量 x${item.quantity}</span><span>重量 ${mat.weight}kg</span><span>稀有度 ${mat.rarity}</span></div>
+                        <div class="card-value">单价 💰${mat.basePrice}</div>
+                        <div class="card-actions"><button class="sell-material-btn" data-idx="${idx}" data-id="${item.id}">出售</button></div>
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+            content.innerHTML = html;
+            content.querySelectorAll('.sell-material-btn').forEach(btn=>{
+                btn.addEventListener('click',()=>{
+                    let id = btn.dataset.id;
+                    let idx = state.materialInventory.findIndex(i=>i.id===id);
+                    if(idx!==-1) sellMaterial(idx);
+                });
+            });
+        }
+    }
+
+    function sellMaterial(idx) {
+        let item = state.materialInventory[idx];
+        if(!item) return;
+        let mat = materials.find(m=>m.id===item.id);
+        let price = Math.floor(mat.basePrice * 0.8 * (0.9 + Math.random()*0.2));
+        let total = price * item.quantity;
+        if(confirm(`出售 ${item.quantity} 个 ${mat.name} 获得 ${total} 金币？`)) {
+            state.materialInventory.splice(idx,1);
+            persistToStorage();
+            renderWarehouse();
+            showToast(`获得 ${total} 金币`,1500);
+        }
+    }
+
+    // 市场
+    function renderMarket() {
+        let content = dom.marketContent;
+        if(state.currentMarketSub==='sell') {
+            // 出售武器
+            let weapons = state.savedSwords;
+            if(weapons.length===0) {
+                content.innerHTML = '<div class="market-empty"><span class="empty-icon">🗡</span>暂无武器可出售</div>';
+                return;
+            }
+            let html = '<div class="warehouse-grid">';
+            weapons.forEach((sw,i)=>{
+                let price = Math.floor((sw.value||0) * 0.8 * (0.9 + Math.random()*0.2));
+                html += `<div class="card">
+                    <div class="card-img-wrap"><img src="${sw.image}" alt="${sw.name}" loading="lazy" style="height:auto;"></div>
+                    <div class="card-info">
+                        <div class="card-name">${sw.name}</div>
+                        <div class="card-stats"><span>锋${sw.stats.sharpness}</span><span>耐${sw.stats.durability}</span><span>韧${sw.stats.toughness}</span></div>
+                        <div class="card-value">💰 ${price}</div>
+                        <div class="card-actions"><button class="sell-sword-btn" data-index="${i}">出售</button></div>
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+            content.innerHTML = html;
+            content.querySelectorAll('.sell-sword-btn').forEach(btn=>{
+                btn.addEventListener('click',()=>{
+                    let idx = parseInt(btn.dataset.index);
+                    let sword = state.savedSwords[idx];
+                    let price = Math.floor((sword.value||0) * 0.8 * (0.9 + Math.random()*0.2));
+                    if(confirm(`出售 "${sword.name}" 获得 ${price} 金币？`)) {
+                        state.savedSwords.splice(idx,1);
+                        persistToStorage();
+                        renderMarket();
+                        renderWarehouse();
+                        showToast(`获得 ${price} 金币`,1500);
+                    }
+                });
+            });
+        } else if(state.currentMarketSub==='buy') {
+            // 购买材料
+            let html = '<div class="warehouse-grid">';
+            materials.forEach(mat=>{
+                let currentPrice = Math.floor(mat.basePrice * (0.9 + Math.random()*0.2));
+                html += `<div class="card">
+                    <div class="card-info">
+                        <div class="card-name" style="color:${mat.color};">${mat.name}</div>
+                        <div class="card-stats"><span>重量 ${mat.weight}kg</span><span>稀有度 ${mat.rarity}</span></div>
+                        <div class="card-value">💰 ${currentPrice}</div>
+                        <div class="card-actions"><button class="buy-material-btn" data-id="${mat.id}" data-price="${currentPrice}">购买</button></div>
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+            content.innerHTML = html;
+            content.querySelectorAll('.buy-material-btn').forEach(btn=>{
+                btn.addEventListener('click',()=>{
+                    let id = btn.dataset.id;
+                    let price = parseInt(btn.dataset.price);
+                    let mat = materials.find(m=>m.id===id);
+                    if(confirm(`购买 ${mat.name} 花费 ${price} 金币？`)) {
+                        let idx = state.materialInventory.findIndex(i=>i.id===id);
+                        if(idx!==-1) state.materialInventory[idx].quantity++;
+                        else state.materialInventory.push({id:id, quantity:1});
+                        persistToStorage();
+                        showToast(`购买 ${mat.name} 成功`,1500);
+                    }
+                });
+            });
+        }
+    }
+
+    // 查看历史刀
+    function viewHistorySword(index) {
+        let sw = state.savedSwords[index];
+        if(!sw) return;
+        state.backupState = {
+            stage: state.stage, gameDone: state.gameDone, slots: [...state.slots],
+            embryo: state.embryo, bladeStats: {...state.bladeStats},
+            bladeColor: state.bladeColor, bladeAccent: state.bladeAccent,
+            bladeWeight: state.bladeWeight, forgeTemp: state.forgeTemp,
+            forgeTargetMin: state.forgeTargetMin, forgeTargetMax: state.forgeTargetMax,
+            forgeTimeLeft: state.forgeTimeLeft, forgeTotalTime: state.forgeTotalTime,
+            hammerCount: state.hammerCount, cracks: [...state.cracks],
+            offImage: offCanvas.toDataURL(), hammerTimeLeft: state.hammerTimeLeft,
+            grindOffsetX: state.grindOffsetX, grindOffsetY: state.grindOffsetY
+        };
+        stopAllTimers();
+        let img = new Image();
+        img.onload = () => {
+            offCtx.clearRect(0,0,W,H); offCtx.drawImage(img,0,0);
+            state.bladeColor = sw.color; state.bladeAccent = sw.accent;
+            state.bladeStats = {...sw.stats}; state.bladeWeight = sw.weight;
+            state.cracks = sw.cracks?[...sw.cracks]:[];
+            clearRGBCache();
+            state.stage=3; state.gameDone=true; state.viewMode=true;
+            state.currentViewIndex=index;
+            state.grindOffsetX=0; state.grindOffsetY=0;
+            dom.canvasWrap.classList.remove('forge-glow','grind-glow','hammer-glow');
+            updateStageUI(); updateUI(); draw();
+            switchTab('forge');
+        };
+        img.onerror = () => { state.backupState=null; state.currentViewIndex=-1; showToast('无法加载该历史刀',2000); };
+        img.src = sw.image;
+    }
+
+    function closeHistoryView() {
+        if(!state.backupState) return;
+        let bs = state.backupState;
+        stopAllTimers();
+        let img = new Image();
+        img.onload = () => {
+            offCtx.clearRect(0,0,W,H); offCtx.drawImage(img,0,0);
+            state.stage = bs.stage; state.gameDone = bs.gameDone; state.slots = bs.slots;
+            state.embryo = bs.embryo; state.bladeStats = bs.bladeStats; state.bladeColor = bs.bladeColor;
+            state.bladeAccent = bs.bladeAccent; state.bladeWeight = bs.bladeWeight; state.forgeTemp = bs.forgeTemp;
+            state.forgeTargetMin = bs.forgeTargetMin; state.forgeTargetMax = bs.forgeTargetMax;
+            state.forgeTimeLeft = bs.forgeTimeLeft; state.forgeTotalTime = bs.forgeTotalTime;
+            state.hammerCount = bs.hammerCount; state.cracks = bs.cracks; state.hammerTimeLeft = bs.hammerTimeLeft;
+            state.grindOffsetX = bs.grindOffsetX||0; state.grindOffsetY = bs.grindOffsetY||0;
+            clearRGBCache();
+            state.viewMode=false; state.currentViewIndex=-1;
+            if(state.stage===1 && !state.gameDone) startForgeTimer();
+            if(state.stage===3 && !state.gameDone) { startHammerAnim(); if(bs.hammerTimer) startHammerTimer(); }
+            updateStageUI(); updateUI(); draw();
+        };
+        img.onerror = () => { state.backupState=null; state.viewMode=false; resetGame(); };
+        img.src = bs.offImage;
+        state.backupState = null;
+    }
+
+    // 标签页切换
+    function switchTab(tab) {
+        if(state.viewMode && (tab==='warehouse'||tab==='market')) closeHistoryView();
+        state.currentTab = tab;
+        document.querySelectorAll('.tab-btn').forEach(btn=>{
+            btn.classList.toggle('active', btn.dataset.tab===tab);
+        });
+        dom.viewForge.classList.toggle('active', tab==='forge');
+        dom.viewWarehouse.classList.toggle('active', tab==='warehouse');
+        dom.viewMarket.classList.toggle('active', tab==='market');
+        dom.viewCombat.classList.toggle('active', tab==='combat');
+        if(tab==='warehouse') renderWarehouse();
+        if(tab==='market') renderMarket();
+        if(tab==='forge') { resizeCanvas(); draw(); }
+    }
+
+    function resizeCanvas() {
+        let rect = dom.canvasWrap.getBoundingClientRect();
+        let scale = Math.min(rect.width/W, rect.height/H);
+        dom.canvas.width = W; dom.canvas.height = H;
+        dom.canvas.style.width = (W*scale)+'px'; dom.canvas.style.height = (H*scale)+'px';
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // 事件绑定
+    dom.canvas.addEventListener('mousedown', e=>{ if(state.stage===2 && !state.gameDone) startGrind(getCanvasPos(e)); });
+    dom.canvas.addEventListener('mousemove', e=>{ if(state.stage===2 && state.isGrinding) moveGrind(getCanvasPos(e)); });
+    dom.canvas.addEventListener('mouseup', endGrind);
+    dom.canvas.addEventListener('mouseleave', endGrind);
+    dom.canvas.addEventListener('touchstart', e=>{ if(state.stage===2){ e.preventDefault(); startGrind(getCanvasPos(e.touches[0])); } }, {passive:false});
+    dom.canvas.addEventListener('touchmove', e=>{ if(state.stage===2 && state.isGrinding){ e.preventDefault(); moveGrind(getCanvasPos(e.touches[0])); } }, {passive:false});
+    dom.canvas.addEventListener('touchend', endGrind);
+    document.querySelectorAll('.tab-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>switchTab(btn.dataset.tab));
+    });
+    // 仓库子标签
+    document.querySelector('#viewWarehouse .sub-tab')?.addEventListener('click',(e)=>{
+        let target = e.target.closest('.sub-tab-btn');
+        if(target && target.dataset.sub) {
+            document.querySelectorAll('#viewWarehouse .sub-tab-btn').forEach(btn=>btn.classList.remove('active'));
+            target.classList.add('active');
+            state.currentWarehouseSub = target.dataset.sub;
+            renderWarehouse();
+        }
+    });
+    // 市场子标签
+    document.querySelector('#viewMarket .sub-tab')?.addEventListener('click',(e)=>{
+        let target = e.target.closest('.sub-tab-btn');
+        if(target && target.dataset.sub) {
+            document.querySelectorAll('#viewMarket .sub-tab-btn').forEach(btn=>btn.classList.remove('active'));
+            target.classList.add('active');
+            state.currentMarketSub = target.dataset.sub;
+            renderMarket();
+        }
+    });
+
+    // 初始化
+    loadFromStorage();
+    resizeCanvas();
+    updateStageUI(); updateUI(); draw();
+    switchTab('forge');
+})();
+</script>
+</body>
+</html>
