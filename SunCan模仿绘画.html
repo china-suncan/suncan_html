@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>模仿绘画</title>
+<style>
+:root{
+  --bg:#0b0d12; --surface:#12161f; --surface2:#1a1f2b; --surface3:#232a38;
+  --border:#252c3a; --text:#e7ebf3; --muted:#7f8a9e;
+  --accent:#4d8dff; --accent-dim:rgba(77,141,255,.15);
+  --ok:#22c55e; --warn:#f59e0b;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);
+  display:flex;flex-direction:column;height:100vh;
+  -webkit-font-smoothing:antialiased;user-select:none;
+}
+
+#topbar{
+  flex-shrink:0;min-height:52px;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:7px;padding:0 12px;
+  overflow-x:auto;overflow-y:hidden;z-index:100;
+}
+#topbar::-webkit-scrollbar{height:0}
+#topbar > *{flex-shrink:0}
+
+.brand{
+  display:flex;align-items:center;gap:7px;
+  font-size:13px;font-weight:600;margin-right:2px;
+}
+.brand-mark{
+  width:24px;height:24px;border-radius:7px;
+  background:linear-gradient(135deg,#4d8dff,#22d3ee);
+  display:grid;place-items:center;
+}
+.brand-mark svg{width:13px;height:13px;fill:none;stroke:#04101f;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+.tb-btn{
+  height:32px;padding:0 11px;border-radius:8px;
+  background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  font-size:12px;font-weight:500;cursor:pointer;
+  display:inline-flex;align-items:center;gap:5px;
+  transition:.15s;white-space:nowrap;font-family:inherit;
+}
+.tb-btn:hover:not(:disabled){background:var(--surface3);border-color:#33405a}
+.tb-btn:active:not(:disabled){transform:translateY(1px)}
+.tb-btn:disabled{opacity:.35;cursor:not-allowed}
+.tb-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.tb-btn.primary{
+  background:linear-gradient(180deg,#5b97ff,#3d7ce8);
+  color:#04121f;font-weight:600;border:none;
+}
+.tb-btn.primary:hover:not(:disabled){filter:brightness(1.08)}
+.tb-btn.primary.pause{
+  background:linear-gradient(180deg,#fbbf24,#f59e0b);
+}
+.tb-btn.on{
+  background:var(--accent-dim);border-color:rgba(77,141,255,.5);color:var(--accent);
+}
+
+.tb-sep{width:1px;height:20px;background:var(--border);margin:0 2px}
+
+.tb-slider{
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;color:var(--muted);white-space:nowrap;
+}
+.tb-slider input[type=range]{
+  width:70px;-webkit-appearance:none;appearance:none;
+  height:4px;border-radius:2px;background:var(--surface3);outline:none;cursor:pointer;
+}
+.tb-slider input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:12px;height:12px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 0 2px var(--surface);
+}
+.tb-slider input[type=range]::-moz-range-thumb{
+  width:12px;height:12px;border-radius:50%;border:none;background:var(--accent);
+}
+.tb-slider .v{color:var(--text);font-variant-numeric:tabular-nums;min-width:30px;font-size:11px}
+
+.tb-status{
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;color:var(--muted);white-space:nowrap;
+}
+.tb-status .dot{
+  width:6px;height:6px;border-radius:50%;background:var(--muted);transition:.2s;
+}
+.tb-status.running .dot{background:var(--accent);animation:blink 1s infinite}
+.tb-status.paused .dot{background:var(--warn)}
+.tb-status.done .dot{background:var(--ok)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.tb-progress{
+  width:60px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;
+}
+.tb-progress-fill{
+  height:100%;background:linear-gradient(90deg,#4d8dff,#22d3ee);width:0%;transition:width .1s linear;
+}
+
+.spacer{flex:1;min-width:0}
+
+#pauseBanner{
+  height:0;background:rgba(245,158,11,.13);
+  border-bottom:1px solid rgba(245,158,11,.28);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  font-size:12.5px;color:#fbbf24;
+  transition:height .2s;overflow:hidden;flex-shrink:0;
+}
+#pauseBanner.show{height:34px}
+#pauseBanner svg{width:13px;height:13px;fill:currentColor;stroke:none}
+
+#stage{
+  flex:1;min-height:0;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+  background:#080a0f;
+  background-image:radial-gradient(rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:22px 22px;
+}
+#stage:fullscreen{background:#05070b}
+
+#emptyHint{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  color:#3d4556;font-size:13.5px;letter-spacing:2px;
+  text-align:center;pointer-events:none;
+}
+#emptyHint svg{
+  width:46px;height:46px;fill:none;stroke:#2a3245;stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round;display:block;margin:0 auto 12px;
+}
+
+#canvasWrapper{
+  position:relative;display:none;
+  background:#fff;border-radius:2px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08),0 20px 60px rgba(0,0,0,.65);
+  flex-shrink:0;
+  transition:transform .26s cubic-bezier(.4,0,.2,1);
+  will-change:transform;
+}
+canvas#paintCanvas{
+  display:block;border-radius:1px;background:#fff;
+}
+
+#drawCursor{
+  position:absolute;width:26px;height:26px;
+  border:2px solid var(--accent);border-radius:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;display:none;z-index:50;
+  box-shadow:0 0 10px rgba(77,141,255,.7),0 0 2px rgba(0,0,0,.5);
+  transition:border-color .15s;
+}
+#drawCursor::after{
+  content:"";position:absolute;left:50%;top:50%;
+  width:4px;height:4px;border-radius:50%;
+  transform:translate(-50%,-50%);
+  background:var(--accent);
+  box-shadow:0 0 4px var(--accent);
+}
+
+#toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(14px);
+  background:#161b28;border:1px solid var(--border);color:var(--text);
+  padding:9px 18px;border-radius:10px;font-size:12.5px;
+  opacity:0;pointer-events:none;transition:.25s;z-index:9999;
+  box-shadow:0 12px 32px rgba(0,0,0,.6);max-width:80vw;text-align:center;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+input[type=file]{display:none}
+
+@media (max-width:760px){
+  #topbar{padding:5px 8px;gap:5px;flex-wrap:wrap;min-height:auto}
+  .brand span{display:none}
+  .tb-slider input[type=range]{width:50px}
+  .tb-slider{font-size:10px}
+  .tb-status{font-size:10px}
+  .tb-btn{padding:0 9px;font-size:11px}
+  .tb-btn svg{width:12px;height:12px}
+}
+</style>
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24"><path d="M4 20l4-1L19 8a2.1 2.1 0 0 0-3-3L5 16l-1 4z"/><path d="M14.5 5.5l4 4"/></svg>
+    </div>
+    <spa</span>
+  </div>
+
+  <label for="fileInput" class="tb-btn">
+    <svg viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+    上传
+  </label>
+  <input type="file" id="fileInput" accept="image/*">
+
+  <button class="tb-btn" id="btnDemo">示例</button>
+
+  <button class="tb-btn primary" id="btnPlay" disabled>
+    <svg viewBox="0 0 24 24" id="playIcon"><path d="M7 4l13 8-13 8V4z" fill="currentColor" stroke="none"/></svg>
+    <span id="playText">开始</span>
+  </button>
+
+  <button class="tb-btn" id="btnRestart" disabled>
+    <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+    重绘
+  </button>
+
+  <div class="tb-sep"></div>
+
+  <div class="tb-slider">
+    <span>精度</span>
+    <input type="range" id="minDiff" min="0" max="99" value="30">
+    <span class="v" id="diffVal">30%</span>
+  </div>
+
+  <div class="tb-sep"></div>
+
+  <button class="tb-btn on" id="btnCursor" title="光标开关">
+    <svg viewBox="0 0 24 24"><path d="M5 3l14 8-6 1-3 6-5-15z"/></svg>
+    光标
+  </button>
+
+  <button class="tb-btn" id="btnFocus" title="聚焦开关">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L20 20"/><path d="M8 11h6"/><path d="M11 8v6"/></svg>
+    聚焦
+  </button>
+
+  <div class="tb-sep"></div>
+
+  <div class="tb-status" id="status">
+    <span class="dot"></span>
+    <span id="statusText">等待图片</span>
+  </div>
+
+  <div class="tb-progress"><div class="tb-progress-fill" id="progressFill"></div></div>
+
+  <div class="spacer"></div>
+
+  <button class="tb-btn" id="btnSave" disabled>
+    <svg viewBox="0 0 24 24"><path d="M5 20h14a1 1 0 0 0 1-1V8l-5-5H5a1 1 0 0 0-1 1v15a1 1 0 0 0 1 1z"/><path d="M8 20v-7h8v7"/><path d="M8 3v5h7"/></svg>
+    保存PNG
+  </button>
+
+  <button class="tb-btn" id="btnFullscreen" title="全屏">
+    <svg viewBox="0 0 24 24"><path d="M4 9V4h5"/><path d="M15 4h5v5"/><path d="M20 15v5h-5"/><path d="M9 20H4v-5"/></svg>
+  </button>
+</header>
+
+<div id="pauseBanner">
+  <svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+  已暂停 · 移开鼠标继续绘制
+</div>
+
+<mn id="stage">
+  <div id="emptyHint">
+    <svg viewBox="0 0 24 24"><path d="M4 20l4-1L19 8a2.1 2.1 0 0 0-3-3L5 16l-1 4z"/><path d="M14.5 5.5l4 4"/></svg>
+    上传图片开始
+  </div>
+  <div id="canvasWrapper">
+    <canvas id="paintCanvas"></canvas>
+  </div>
+  <div id="drawCursor"></div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
+const rgbStr = (r,g,b) => `rgb(${clamp(Math.round(r),0,255)},${clamp(Math.round(g),0,255)},${clamp(Math.round(b),0,255)})`;
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+const MAX_SIZE = 480;
+
+let W=0, H=0;
+const paintCanvas = $('paintCanvas');
+const ctx = paintCanvas.getContext('2d', { willReadFrequently: true });
+const wrapper = $('canvasWrapper');
+const stage = $('stage');
+const drawCursor = $('drawCursor');
+
+const workCanvas = document.createElement('canvas');
+const wctx = workCanvas.getContext('2d', { willReadFrequently: true });
+
+let currentImageSrc = null;
+let originalData = null;
+let regions = [];
+let running = false;
+let paused = false;
+let generation = 0;
+let drawFinished = false;
+
+let showCursor = true;
+let enableFocus = false;
+
+let toastTimer = null;
+function toast(msg, ms=1600){
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), ms);
+}
+
+function setStatus(state, text){
+  $('status').className = 'tb-status ' + (state||'');
+  $('statusText').textContent = text;
+}
+
+function setPlayBtn(state){
+  const btn = $('btnPlay');
+  const icon = $('playIcon');
+  const text = $('playText');
+  if (state === 'play') {
+    btn.classList.remove('pause');
+    icon.innerHTML = '<path d="M7 4l13 8-13 8V4z" fill="currentColor" stroke="none"/>';
+    text.textContent = '开始';
+  } else if (state === 'pause') {
+    btn.classList.add('pause');
+    icon.innerHTML = '<rect x="6" y="5" width="4" height="14" fill="currentColor" stroke="none"/><rect x="14" y="5" width="4" height="14" fill="currentColor" stroke="none"/>';
+    text.textContent = '暂停';
+  } else if (state === 'resume') {
+    btn.classList.remove('pause');
+    icon.innerHTML = '<path d="M7 4l13 8-13 8V4z" fill="currentColor" stroke="none"/>';
+    text.textContent = '继续';
+  }
+}
+
+function setPausedBanner(show){
+  $('pauseBanner').classList.toggle('show', show);
+}
+
+function updateProgress(pct){
+  $('progressFill').style.width = (pct*100).toFixed(1) + '%';
+}
+
+/* ========== 光标 ========== */
+function updateCursorPos(x, y){
+  if (!showCursor || !running){
+    drawCursor.style.display = 'none';
+    return;
+  }
+  drawCursor.style.display = 'block';
+  const rect = paintCanvas.getBoundingClientRect();
+  const stageRect = stage.getBoundingClientRect();
+  const sx = rect.width / W;
+  const sy = rect.height / H;
+  drawCursor.style.left = (rect.left - stageRect.left + x * sx) + 'px';
+  drawCursor.style.top  = (rect.top  - stageRect.top  + y * sy) + 'px';
+}
+
+/* ========== 图像分析 ========== */
+function getPalette(data, count){
+  const pixels = [];
+  for (let i=0; i<data.length; i+=4){
+    if (data[i+3] < 128) continue;
+    pixels.push([data[i], data[i+1], data[i+2]]);
+  }
+  if (!pixels.length) return [];
+  const sampled = [];
+  const step = Math.max(1, Math.floor(pixels.length/5000));
+  for (let i=0; i<pixels.length; i+=step) sampled.push(pixels[i]);
+
+  let centers = [];
+  for (let i=0; i<count; i++){
+    centers.push(sampled[Math.floor(Math.random()*sampled.length)].slice());
+  }
+
+  for (let iter=0; iter<6; iter++){
+    const clusters = Array.from({length:count},()=>[]);
+    for (const p of sampled){
+      let mi=0, md=Infinity;
+      for (let c=0; c<centers.length; c++){
+        const dx=p[0]-centers[c][0], dy=p[1]-centers[c][1], dz=p[2]-centers[c][2];
+        const d = dx*dx+dy*dy+dz*dz;
+        if (d<md){md=d;mi=c;}
+      }
+      clusters[mi].push(p);
+    }
+    for (let c=0; c<count; c++){
+      if (!clusters[c].length) continue;
+      let r=0,g=0,b=0;
+      for (const p of clusters[c]){r+=p[0];g+=p[1];b+=p[2];}
+      centers[c] = [Math.round(r/clusters[c].length),Math.round(g/clusters[c].length),Math.round(b/clusters[c].length)];
+    }
+  }
+  return centers;
+}
+
+function buildMasks(data, pal, total){
+  const masks = pal.map(()=>new Uint8Array(total));
+  const n = pal.length;
+  for (let i=0; i<total; i++){
+    const o = i*4;
+    if (data[o+3] < 128) continue;
+    const r=data[o], g=data[o+1], b=data[o+2];
+    let best=0, bd=Infinity;
+    for (let c=0; c<n; c++){
+      const p = pal[c];
+      const dr=r-p[0], dg=g-p[1], db=b-p[2];
+      const d = dr*dr+dg*dg+db*db;
+      if (d<bd){bd=d;best=c;}
+    }
+    masks[best][i] = 1;
+  }
+  return masks;
+}
+
+function findRegions(mask, W, H, minArea){
+  const total = W*H;
+  const visited = new Uint8Array(total);
+  const out = [];
+  const stack = [];
+
+  for (let i=0; i<total; i++){
+    if (!mask[i] || visited[i]) continue;
+    stack.length = 0;
+    stack.push(i);
+    visited[i] = 1;
+    const block = [];
+    let minX=W, maxX=-1, minY=H, maxY=-1;
+
+    while (stack.length){
+      const p = stack.pop();
+      block.push(p);
+      const x = p%W, y = (p/W)|0;
+      if (x<minX)minX=x; if (x>maxX)maxX=x;
+      if (y<minY)minY=y; if (y>maxY)maxY=y;
+
+      if (x>0){const n=p-1; if(mask[n]&&!visited[n]){visited[n]=1;stack.push(n);}}
+      if (x<W-1){const n=p+1; if(mask[n]&&!visited[n]){visited[n]=1;stack.push(n);}}
+      if (y>0){const n=p-W; if(mask[n]&&!visited[n]){visited[n]=1;stack.push(n);}}
+      if (y<H-1){const n=p+W; if(mask[n]&&!visited[n]){visited[n]=1;stack.push(n);}}
+    }
+
+    if (block.length >= minArea){
+      out.push({block, area:block.length, cx:(minX+maxX)/2, cy:(minY+maxY)/2,
+                minX, maxX, minY, maxY, bw: maxX-minX+1, bh: maxY-minY+1});
+    }
+  }
+  return out;
+}
+
+/* ========== 分级 + 就近排序 + 合并策略 ========== */
+function buildPlan(regions, W, H){
+  const byLevel = [[],[],[],[]];
+  const totalArea = regions.reduce((s,r)=>s+r.area, 0);
+
+  // 先按面积分级
+  const sorted = regions.slice().sort((a,b)=>b.area - a.area);
+  let acc = 0;
+  for (const r of sorted){
+    acc += r.area;
+    const ratio = acc / totalArea;
+    let lv = 0;
+    if (ratio < 0.35) lv = 0;
+    else if (ratio < 0.65) lv = 1;
+    else if (ratio < 0.88) lv = 2;
+    else lv = 3;
+    r.level = lv;
+    byLevel[lv].push(r);
+  }
+
+  const diag = Math.hypot(W, H) || 1;
+
+  function orderByProximity(list){
+    if (list.length < 2) return list.slice();
+    let first = 0;
+    for (let i=1; i<list.length; i++) if (list[i].area > list[first].area) first = i;
+    const remaining = list.slice();
+    const ordered = [remaining.splice(first, 1)[0]];
+    while (remaining.length){
+      const last = ordered[ordered.length-1];
+      let bi=0, bs=Infinity;
+      for (let i=0; i<remaining.length; i++){
+        const d = Math.hypot(remaining[i].cx-last.cx, remaining[i].cy-last.cy);
+        if (d < bs){bs=d;bi=i;}
+      }
+      ordered.push(remaining.splice(bi,1)[0]);
+    }
+    return ordered;
+  }
+
+  const plan = [];
+
+  // 逐级处理：本级的每个区域，合并其附近的下级区域像素
+  for (let lv = 0; lv < 4; lv++){
+    const ordered = orderByProximity(byLevel[lv]);
+    for (const r of ordered){
+      const merged = new Set(r.block);
+      // 距离阈值：级别越高（数字大）阈值越小，只合并真正贴着的下级
+      const baseTh = diag * (lv === 0 ? 0.14 : lv === 1 ? 0.09 : 0.05);
+
+      for (let sl = lv+1; sl < 4; sl++){
+        for (const sub of byLevel[sl]){
+          const d = Math.hypot(sub.cx - r.cx, sub.cy - r.cy);
+          // 级别差越大，阈值越小
+          const th = baseTh * Math.pow(0.75, sl - lv - 1);
+          if (d < th){
+            for (const p of sub.block) merged.add(p);
+          }
+        }
+      }
+
+      plan.push({
+        region: r,
+        level: lv,
+        pixels: Array.from(merged),
+        isFirst: plan.length === 0
+      });
+    }
+  }
+
+  return plan;
+}
+
+/* ========== 笔刷大小自动计算 ========== */
+function calcBatch(area, level){
+  // 大块用大笔刷（帧数少、每帧像素多），小块用小笔刷（帧数多、每帧像素少）
+  let targetFrames;
+  if (level === 0)      targetFrames = 5;
+  else if (level === 1) targetFrames = 10;
+  else if (level === 2) targetFrames = 16;
+  else                  targetFrames = 22;
+  return Math.max(1, Math.ceil(area / targetFrames));
+}
+
+/* ========== 聚焦 ========== */
+function resetFocus(){
+  if (wrapper.style.transform){
+    wrapper.style.transform = '';
+    return delay(220);
+  }
+  return Promise.resolve();
+}
+
+function focusOn(region){
+  if (!enableFocus) return resetFocus();
+  if (!W || !H) return Promise.resolve();
+
+  const stageRect = stage.getBoundingClientRect();
+  const stageW = stageRect.width;
+  const stageH = stageRect.height;
+
+  const cw = paintCanvas.clientWidth;
+  const ch = paintCanvas.clientHeight;
+  if (!cw || !ch || !stageW || !stageH) return Promise.resolve();
+
+  const rw = (region.bw / W) * cw;
+  const rh = (region.bh / H) * ch;
+  if (rw <= 0 || rh <= 0) return resetFocus();
+
+  // 目标：区域包围盒占 stage 的 60%
+  let scale = Math.min((stageW * 0.6) / rw, (stageH * 0.6) / rh);
+  scale = clamp(scale, 1, 8);
+
+  // 区域中心在画布 layout 坐标中的位置
+  const px = ((region.minX + region.maxX + 1) / 2) / W * cw;
+  const py = ((region.minY + region.maxY + 1) / 2) / H * ch;
+
+  // 画布在 stage 中 flex 居中的基础位置
+  const Lx = (stageW - cw) / 2;
+  const Ly = (stageH - ch) / 2;
+
+  // 目标：区域中心落在 stage 中心
+  const tx = stageW / 2 - Lx - px * scale;
+  const ty = stageH / 2 - Ly - py * scale;
+
+  wrapper.style.transformOrigin = '0 0';
+  wrapper.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+
+  return delay(260);
+}
+
+/* ========== 帧等待（支持暂停） ========== */
+function waitFrame(gen){
+  return new Promise(resolve=>{
+    function tick(){
+      if (gen !== generation) return resolve(false);
+      if (paused){ requestAnimationFrame(tick); return; }
+      resolve(true);
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+/* ========== 铺底色：横向大刷子扫过整个画布 ========== */
+async function fillBackground(color, gen){
+  const col = rgbStr(color[0], color[1], color[2]);
+  ctx.fillStyle = col;
+  const bands = 10;
+  const bandH = Math.ceil(H / bands);
+  for (let y=0; y<H; y+=bandH){
+    const ok = await waitFrame(gen);
+    if (!ok) return false;
+    ctx.fillRect(0, y, W, Math.min(bandH, H-y));
+    // 光标跟随
+    updateCursorPos(W * 0.5, y + bandH * 0.5);
+  }
+  return true;
+}
+
+/* ========== 按像素逐点画一块（用 fillRect 1x1 保证无缝） ========== */
+async function brushFill(pixels, color, batch, gen){
+  if (!pixels.length) return true;
+  const col = rgbStr(color[0], color[1], color[2]);
+  ctx.fillStyle = col;
+
+  // 按到该块中心的距离排序，从中心向外扩散，视觉上像笔刷由中心向四周铺开
+  let sumX = 0, sumY = 0;
+  for (const p of pixels){
+    sumX += p % W;
+    sumY += (p / W) | 0;
+  }
+  const cx = sumX / pixels.length;
+  const cy = sumY / pixels.length;
+  const sorted = pixels.map(p=>{
+    const x = p % W, y = (p / W) | 0;
+    const dx = x - cx, dy = y - cy;
+    return { x, y, d: dx*dx + dy*dy };
+  }).sort((a,b)=>a.d - b.d);
+
+  const total = sorted.length;
+  for (let i=0; i<total; i+=batch){
+    const ok = await waitFrame(gen);
+    if (!ok) return false;
+    const end = Math.min(total, i + batch);
+    for (let j=i; j<end; j++){
+      ctx.fillRect(sorted[j].x, sorted[j].y, 1, 1);
+    }
+    const last = sorted[end-1];
+    updateCursorPos(last.x, last.y);
+  }
+  return true;
+}
+
+/* ========== 主绘制流程 ========== */
+async function drawAll(gen){
+  const plan = buildPlan(regions, W, H);
+  if (!plan.length) return;
+
+  // ① 第一个任务（最大块）→ 铺满整个画布作为底色
+  const first = plan[0];
+  await resetFocus();
+  if (gen !== generation) return;
+  setStatus('running', '铺底色…');
+  if (!await fillBackground(first.region.color, gen)) return;
+  updateProgress(1 / plan.length);
+
+  // ② 其余任务按级别逐块绘制
+  for (let i=1; i<plan.length; i++){
+    if (gen !== generation) return;
+    const task = plan[i];
+
+    // 聚焦：L1 以上都聚焦；L0 恢复整图
+    if (task.level > 0){
+      await focusOn(task.region);
+    } else {
+      await resetFocus();
+    }
+    if (gen !== generation) return;
+
+    setStatus('running', `绘制中 · L${task.level}`);
+    const batch = calcBatch(task.pixels.length, task.level);
+    const ok = await brushFill(task.pixels, task.region.color, batch, gen);
+    if (!ok) return;
+
+    updateProgress((i+1) / plan.length);
+  }
+}
+
+/* ========== 图片处理入口 ========== */
+function processImage(img){
+  running = false;
+  generation++;
+  paused = false;
+  drawFinished = false;
+  setPausedBanner(false);
+  drawCursor.style.display = 'none';
+
+  regions = [];
+  updateProgress(0);
+  $('btnPlay').disabled = true;
+  $('btnRestart').disabled = true;
+  $('btnSave').disabled = true;
+  setPlayBtn('play');
+
+  const scale = Math.min(MAX_SIZE / img.width, MAX_SIZE / img.height, 1);
+  W = Math.max(16, Math.round(img.width * scale));
+  H = Math.max(16, Math.round(img.height * scale));
+
+  paintCanvas.width = W;
+  paintCanvas.height = H;
+
+  workCanvas.width = W;
+  workCanvas.height = H;
+  wctx.clearRect(0, 0, W, H);
+  wctx.drawImage(img, 0, 0, W, H);
+  originalData = wctx.getImageData(0, 0, W, H).data;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  wrapper.style.transform = '';
+  wrapper.style.display = 'block';
+  $('emptyHint').style.display = 'none';
+  updateDisplaySize();
+
+  setStatus('', '分析中…');
+  setTimeout(analyzeAndPrepare, 30);
+}
+
+function analyzeAndPrepare(){
+  try {
+    const total = W * H;
+    const diff = parseInt($('minDiff').value, 10) / 100;
+    const colorCount = Math.max(3, Math.round(16 - diff * 13));
+    const minArea = Math.max(2, Math.round(2 + diff * 200));
+
+    const palette = getPalette(originalData, colorCount);
+    if (!palette.length){ setStatus('', '无有效像素'); return; }
+
+    const masks = buildMasks(originalData, palette, total);
+
+    const all = [];
+    for (let c=0; c<palette.length; c++){
+      const list = findRegions(masks[c], W, H, minArea);
+      for (const r of list){
+        r.color = palette[c];
+        all.push(r);
+      }
+    }
+
+    if (!all.length){ setStatus('', '未识别到区域'); return; }
+
+    // 关键：补齐所有未覆盖像素，保证最终无空白
+    const covered = new Uint8Array(total);
+    for (const r of all){
+      for (const p of r.block) covered[p] = 1;
+    }
+
+    const missedByColor = {};
+    for (let i=0; i<total; i++){
+      if (covered[i]) continue;
+      const o = i*4;
+      if (originalData[o+3] < 128) continue;
+      const r0=originalData[o], g0=originalData[o+1], b0=originalData[o+2];
+      let best=0, bd=Infinity;
+      for (let c=0; c<palette.length; c++){
+        const p = palette[c];
+        const d = (r0-p[0])**2 + (g0-p[1])**2 + (b0-p[2])**2;
+        if (d<bd){bd=d;best=c;}
+      }
+      if (!missedByColor[best]) missedByColor[best] = [];
+      missedByColor[best].push(i);
+    }
+    for (const k in missedByColor){
+      const c = parseInt(k, 10);
+      const block = missedByColor[k];
+      if (!block.length) continue;
+      let minX=W, maxX=-1, minY=H, maxY=-1;
+      for (const p of block){
+        const x=p%W, y=(p/W)|0;
+        if (x<minX)minX=x; if (x>maxX)maxX=x;
+        if (y<minY)minY=y; if (y>maxY)maxY=y;
+      }
+      all.push({
+        block, area: block.length,
+        cx: (minX+maxX)/2, cy: (minY+maxY)/2,
+        minX, maxX, minY, maxY,
+        bw: maxX-minX+1, bh: maxY-minY+1,
+        color: palette[c]
+      });
+    }
+
+    regions = all;
+
+    setStatus('', `${regions.length} 个色块`);
+    $('btnPlay').disabled = false;
+    $('btnRestart').disabled = false;
+    $('btnSave').disabled = false;
+    setPlayBtn('play');
+    updateProgress(0);
+
+    toast('分析完成，点"开始"绘制', 1600);
+  } catch (err){
+    console.error(err);
+    setStatus('', '处理失败');
+    toast('处理失败，请换一张图片');
+  }
+}
+
+/* ========== 开始/暂停/恢复 ========== */
+async function startDraw(){
+  if (!regions.length || running) return;
+
+  running = true;
+  paused = false;
+  drawFinished = false;
+  generation++;
+  const gen = generation;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+  wrapper.style.transform = '';
+
+  setStatus('running', '准备绘制…');
+  setPlayBtn('pause');
+  setPausedBanner(false);
+  $('btnPlay').disabled = false;
+  $('btnRestart').disabled = false;
+  $('btnSave').disabled = true;
+  updateProgress(0);
+
+  await drawAll(gen);
+
+  if (gen !== generation) return;
+
+  running = false;
+  drawFinished = true;
+  updateProgress(1);
+  setStatus('done', '绘制完成 ✓');
+  setPlayBtn('play');
+  $('btnPlay').disabled = true;
+  $('btnSave').disabled = false;
+  setPausedBanner(false);
+  drawCursor.style.display = 'none';
+
+  await resetFocus();
+  toast('绘制完成，可保存 PNG', 2000);
+}
+
+function pauseDraw(){
+  if (!running || paused) return;
+  paused = true;
+  setPausedBanner(true);
+  setStatus('paused', '已暂停');
+  setPlayBtn('resume');
+}
+
+function resumeDraw(){
+  if (!running || !paused) return;
+  paused = false;
+  setPausedBanner(false);
+  setStatus('running', '绘制中…');
+  setPlayBtn('pause');
+}
+
+function togglePlay(){
+  if (!running && !drawFinished) startDraw();
+  else if (running && !paused) pauseDraw();
+  else if (running && paused) resumeDraw();
+  else if (drawFinished) restart();
+}
+
+function restart(){
+  if (!currentImageSrc) return;
+  running = false;
+  generation++;
+  paused = false;
+  drawFinished = false;
+  setPausedBanner(false);
+  drawCursor.style.display = 'none';
+  wrapper.style.transform = '';
+  loadAndProcess(currentImageSrc);
+}
+
+/* ========== 显示尺寸 ========== */
+function updateDisplaySize(){
+  if (!W || !H) return;
+  const rect = stage.getBoundingClientRect();
+  const pad = 32;
+  const availW = Math.max(100, rect.width - pad);
+  const availH = Math.max(100, rect.height - pad);
+  let s = Math.min(availW/W, availH/H);
+  s = clamp(s, 0.1, 4);
+  paintCanvas.style.width = Math.round(W*s) + 'px';
+  paintCanvas.style.height = Math.round(H*s) + 'px';
+}
+window.addEventListener('resize', updateDisplaySize);
+document.addEventListener('fullscreenchange', () => setTimeout(updateDisplaySize, 150));
+
+/* ========== 保存 PNG ========== */
+function savePNG(){
+  if (!W || !H) return;
+  paintCanvas.toBlob(blob => {
+    if (!blob){ toast('保存失败'); return; }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ai-drawing-' + Date.now() + '.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    toast('已保存 PNG', 1400);
+  }, 'image/png');
+}
+
+/* ========== 事件绑定 ========== */
+$('fileInput').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const url = URL.createObjectURL(f);
+  loadAndProcess(url);
+  e.target.value = '';
+});
+
+$('btnDemo').addEventListener('click', () => {
+  const tc = document.createElement('canvas');
+  tc.width = 420; tc.height = 420;
+  const g = tc.getContext('2d');
+  g.fillStyle = '#f2f6ff'; g.fillRect(0,0,420,420);
+  g.fillStyle = '#ea4335'; g.beginPath(); g.arc(150,155,82,0,Math.PI*2); g.fill();
+  g.fillStyle = '#4285f4'; g.beginPath(); g.arc(270,265,82,0,Math.PI*2); g.fill();
+  g.fillStyle = '#fbbc05'; g.beginPath(); g.arc(268,152,58,0,Math.PI*2); g.fill();
+  g.fillStyle = '#34a853'; g.beginPath(); g.arc(150,268,58,0,Math.PI*2); g.fill();
+  g.fillStyle = '#222'; g.font='bold 42px system-ui,sans-serif'; g.fillText('AI画图',130,226);
+  loadAndProcess(tc.toDataURL());
+});
+
+$('btnPlay').addEventListener('click', togglePlay);
+$('btnRestart').addEventListener('click', restart);
+$('btnSave').addEventListener('click', savePNG);
+
+$('minDiff').addEventListener('input', e => {
+  $('diffVal').textContent = e.target.value + '%';
+});
+$('minDiff').addEventListener('change', () => {
+  if (currentImageSrc && !running) loadAndProcess(currentImageSrc);
+});
+
+$('btnCursor').addEventListener('click', () => {
+  showCursor = !showCursor;
+  $('btnCursor').classList.toggle('on', showCursor);
+  if (!showCursor) drawCursor.style.display = 'none';
+  toast(showCursor ? '光标已开启' : '光标已关闭', 900);
+});
+
+$('btnFocus').addEventListener('click', () => {
+  enableFocus = !enableFocus;
+  $('btnFocus').classList.toggle('on', enableFocus);
+  toast(enableFocus ? '聚焦已开启' : '聚焦已关闭', 900);
+});
+
+$('btnFullscreen').addEventListener('click', () => {
+  if (!document.fullscreenElement){
+    document.documentElement.requestFullscreen()
+      .then(()=>setTimeout(updateDisplaySize,150))
+      .catch(()=>{});
+  } else {
+    document.exitFullscreen();
+  }
+});
+
+wrapper.addEventListener('mouseenter', () => {
+  if (running && !paused) pauseDraw();
+});
+wrapper.addEventListener('mouseleave', () => {
+  if (running && paused) resumeDraw();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && document.activeElement === document.body){
+    e.preventDefault();
+    if (running) paused ? resumeDraw() : pauseDraw();
+  }
+});
+
+function loadAndProcess(src){
+  currentImageSrc = src;
+  const img = new Image();
+  img.crossOrigin = 'Anonymous';
+  img.onload = () => processImage(img);
+  img.onerror = () => toast('图片加载失败');
+  img.src = src;
+}
+
+/* ========== 初始化 ========== */
+setStatus('', '等待图片');
+setPlayBtn('play');
+$('btnPlay').disabled = true;
+updateProgress(0);
+
+})();
+</script>
+</body>
+</html>
