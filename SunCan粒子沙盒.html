@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SunCan粒子沙盒</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:#111; display:flex; flex-direction:column; height:100vh; overflow:hidden; color:#fff; font-family:Arial; }
+        #tools { background:#222; padding:10px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; border-bottom:2px solid #444; }
+        .tool { width:80px; height:80px; border:3px solid #444; border-radius:8px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#2a2a2a; transition:0.2s; }
+        .tool.active { border:3px solid #fff; box-shadow:0 0 20px rgba(255,255,255,0.3); background:#333; }
+        .tool .icon { width:50px; height:50px; border-radius:6px; margin-bottom:5px; border:2px solid #555; }
+        #earth-icon { background:#654321; }
+        #water-icon { background:#1e90ff; }
+        #lava-icon { background:#ff4500; }
+        #stone-icon { background:#696969; }
+        #cloud-icon { background:#fff; }
+        #iron-icon { background:#333333; }
+        #human-icon { background:#f0c895; }
+        #fire-icon { background:#ff9900; }
+        #wood-icon { background:#8B4513; }
+        #plant-icon { background:#228B22; }
+        #ice-icon { background:#ADD8E6; }
+        #acid-icon { background:#ADFF2F; }
+        #eraser-icon { background:#333; position:relative; }
+        #eraser-icon::before { content:"橡皮"; color:#fff; font-size:30px; font-weight:bold; line-height:50px; }
+        #clear-icon { background:#8b0000; position:relative; }
+        #clear-icon::before { content:"清空"; color:#fff; font-size:25px; line-height:50px; }
+        #pause-icon { background:#444; position:relative; }
+        #pause-icon::before { content:"运行中"; color:#fff; font-size:25px; line-height:50px; }
+        #pause-icon.paused::before { content:"暂停中"; }
+        #brush-sizes { background:#222; padding:8px 10px; display:flex; justify-content:center; gap:8px; border-bottom:1px solid #444; }
+        .brush-size { padding:4px 12px; border:2px solid #444; border-radius:4px; cursor:pointer; font-size:14px; background:#2a2a2a; transition:0.2s; }
+        .brush-size.active { border-color:#fff; background:#333; }
+        #world-container { flex:1; display:flex; justify-content:center; align-items:center; padding:20px; background:#000; overflow:auto; }
+        #world { background:#000; border:3px solid #444; border-radius:2px; overflow:hidden; position:relative; }
+        canvas { display:block; }
+        #stats { position:fixed; bottom:10px; left:10px; background:rgba(0,0,0,0.7); padding:5px 10px; border-radius:5px; font-size:12px; color:#fff; z-index:100; }
+    </style>
+</head>
+<body>
+    <div id="tools">
+        <!-- 基础材料 -->
+        <div class="tool" data-tool="earth"><div class="icon" id="earth-icon"></div>泥土</div>
+        <div class="tool" data-tool="water"><div class="icon" id="water-icon"></div>水</div>
+        <div class="tool" data-tool="lava"><div class="icon" id="lava-icon"></div>岩浆</div>
+        <div class="tool" data-tool="stone"><div class="icon" id="stone-icon"></div>石头</div>
+        <div class="tool" data-tool="cloud"><div class="icon" id="cloud-icon"></div>云</div>
+        <div class="tool" data-tool="iron"><div class="icon" id="iron-icon"></div>铁块</div>
+        <div class="tool" data-tool="human"><div class="icon" id="human-icon"></div>人</div>
+        <div class="tool" data-tool="fire"><div class="icon" id="fire-icon"></div>火</div>
+        <!-- 新增材料 -->
+        <div class="tool" data-tool="wood"><div class="icon" id="wood-icon"></div>木头</div>
+        <div class="tool" data-tool="plant"><div class="icon" id="plant-icon"></div>植物</div>
+        <div class="tool" data-tool="ice"><div class="icon" id="ice-icon"></div>冰</div>
+        <div class="tool" data-tool="acid"><div class="icon" id="acid-icon"></div>硫酸</div>
+        <div class="tool" data-tool="eraser"><div class="icon" id="eraser-icon"></div>橡皮</div>
+        <div class="tool" id="clear-btn"><div class="icon" id="clear-icon"></div>清空</div>
+        <div class="tool" id="pause-btn"><div class="icon" id="pause-icon"></div><span id="pause-text">暂停</span></div>
+    </div>
+    <div id="brush-sizes">
+        <div class="brush-size active" data-size="0">超小(1×1)</div>
+        <div class="brush-size" data-size="1">小(3×3)</div>
+        <div class="brush-size" data-size="2">中(5×5)</div>
+        <div class="brush-size" data-size="3">大(7×7)</div>
+        <div class="brush-size" data-size="4">超大(9×9)</div>
+    </div>
+    <div id="world-container"><div id="world"><canvas id="canvas"></canvas></div></div>
+    <div id="stats">粒子: <span id="particleCount">0</span> / 12800 | 人: <span id="humanCount">0</span> / 16</div>
+
+    <script>
+        // ==================== 核心配置 ====================
+        const CELL_SIZE = 6;
+        const WORLD_SIZE = 800;
+        const PHYSICS_FPS = 16;              // 物理帧率
+        const MAX_PARTICLES = 12800;
+        const MAX_HUMANS = 16;
+        const brushSizeMap = [0, 1, 2, 3, 4]; // 笔刷半径
+
+        // 材料定义（颜色、密度、是否可移动等）
+        const MATERIALS = {
+            earth:   { color: '#654321', movable: true, liquid: false, density: 1.5 },
+            water:   { color: '#1e90ff', movable: true, liquid: true, density: 1.0 },
+            lava:    { color: '#ff4500', movable: true, liquid: true, density: 2.0 },
+            stone:   { color: '#696969', movable: true, liquid: false, density: 2.5 },
+            cloud:   { color: '#fff',    movable: true, liquid: false, density: 0.1 }, // 云向上飘
+            border:  { color: '#444',     movable: false, liquid: false, density: 999 },
+            iron:    { color: '#333333',  movable: false, liquid: false, density: 3.0 }, // 铁不移动
+            human:   { color: '#f0c895',  movable: false, liquid: false, density: 1.1 }, // 人类单独处理
+            fire:    { color: '#ff9900',  movable: false, liquid: false, density: 0.2 }, // 火单独处理
+            wood:    { color: '#8B4513',  movable: false, liquid: false, density: 0.6 },
+            plant:   { color: '#228B22',  movable: false, liquid: false, density: 0.5 },
+            ice:     { color: '#ADD8E6',  movable: false, liquid: false, density: 0.9 },
+            acid:    { color: '#ADFF2F',  movable: true,  liquid: true,  density: 1.2 }
+        };
+
+        // ==================== 全局变量 ====================
+        let selectedTool = 'earth';
+        let isDrawing = false;
+        let grid = [];             // 当前帧网格 (存储材料id)
+        let nextGrid = [];         // 下一帧网格
+        let fireLifetime = [];     // 火的剩余寿命（秒）
+        let cols = 0, rows = 0;
+        let isPaused = false;
+        let physicsInterval = null;
+        let selectedBrushSize = 0;
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let humans = [];           // 人类实体列表
+
+        // 计数器用于半秒效果 (16fps下8帧为半秒)
+        let frameCounter = 0;
+        const HALF_SECOND_FRAMES = 8;
+
+        // ==================== 初始化 ====================
+        window.addEventListener('load', init);
+        function init() {
+            initWorld();
+            bindEvents();
+            startLoops();
+        }
+
+        function initWorld() {
+            const world = document.getElementById('world');
+            world.style.width = WORLD_SIZE + 'px';
+            world.style.height = WORLD_SIZE + 'px';
+            canvas.width = WORLD_SIZE;
+            canvas.height = WORLD_SIZE;
+
+            cols = Math.floor(WORLD_SIZE / CELL_SIZE);
+            rows = Math.floor(WORLD_SIZE / CELL_SIZE);
+            
+            grid = Array(rows).fill(null).map(() => Array(cols).fill(null));
+            nextGrid = Array(rows).fill(null).map(() => Array(cols).fill(null));
+            fireLifetime = Array(rows).fill(null).map(() => Array(cols).fill(0));
+            
+            createBorder();
+            humans = [];
+        }
+
+        function createBorder() {
+            for (let x = 0; x < cols; x++) {
+                grid[0][x] = 'border';
+                grid[rows - 1][x] = 'border';
+            }
+            for (let y = 0; y < rows; y++) {
+                grid[y][0] = 'border';
+                grid[y][cols - 1] = 'border';
+            }
+        }
+
+        // ==================== 事件绑定 ====================
+        function bindEvents() {
+            // 材料选择
+            document.querySelectorAll('.tool[data-tool]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedTool = btn.dataset.tool;
+                });
+            });
+
+            // 笔刷大小
+            document.querySelectorAll('.brush-size').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.brush-size').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedBrushSize = parseInt(btn.dataset.size);
+                });
+            });
+
+            // 清空
+            document.getElementById('clear-btn').addEventListener('click', () => {
+                if (confirm('确定清空所有材料？')) {
+                    grid = Array(rows).fill(null).map(() => Array(cols).fill(null));
+                    fireLifetime = Array(rows).fill(null).map(() => Array(cols).fill(0));
+                    humans = [];
+                    createBorder();
+                }
+            });
+
+            // 暂停/继续
+            document.getElementById('pause-btn').addEventListener('click', () => {
+                isPaused = !isPaused;
+                const icon = document.getElementById('pause-icon');
+                const text = document.getElementById('pause-text');
+                if (isPaused) {
+                    icon.classList.add('paused');
+                    text.textContent = '继续';
+                } else {
+                    icon.classList.remove('paused');
+                    text.textContent = '暂停';
+                }
+            });
+
+            // 绘制事件
+            canvas.addEventListener('mousedown', (e) => {
+                isDrawing = true;
+                placeMaterial(e);
+            });
+            canvas.addEventListener('mousemove', (e) => isDrawing && placeMaterial(e));
+            canvas.addEventListener('mouseup', () => isDrawing = false);
+            canvas.addEventListener('mouseleave', () => isDrawing = false);
+
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                isDrawing = true;
+                placeMaterial(e.touches[0]);
+            });
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                isDrawing && placeMaterial(e.touches[0]);
+            });
+            ['touchend', 'touchcancel'].forEach(evt => {
+                canvas.addEventListener(evt, () => isDrawing = false);
+            });
+        }
+
+        // ==================== 放置材料 ====================
+        function placeMaterial(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / CELL_SIZE);
+            const y = Math.floor((e.clientY - rect.top) / CELL_SIZE);
+
+            if (x < 0 || x >= cols || y < 0 || y >= rows || grid[y][x] === 'border') return;
+            
+            // 粒子计数
+            let particleCount = 0;
+            for (let ry = 0; ry < rows; ry++) {
+                for (let rx = 0; rx < cols; rx++) {
+                    if (grid[ry][rx] && grid[ry][rx] !== 'border') particleCount++;
+                }
+            }
+
+            const brushRadius = brushSizeMap[selectedBrushSize];
+            
+            // 放置人类（特殊处理）
+            if (selectedTool === 'human') {
+                if (humans.length >= MAX_HUMANS) return;
+                humans.push({
+                    x: x + 0.5,
+                    y: y + 0.5,
+                    width: 1.8,
+                    height: 3.6,
+                    alive: true,
+                    vy: 0,
+                    jumpCooldown: 0
+                });
+                return;
+            }
+            
+            // 放置火
+            if (selectedTool === 'fire') {
+                for (let dy = -brushRadius; dy <= brushRadius; dy++) {
+                    for (let dx = -brushRadius; dx <= brushRadius; dx++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && grid[ny][nx] === null) {
+                            grid[ny][nx] = 'fire';
+                            fireLifetime[ny][nx] = 4.0; // 寿命4秒
+                        }
+                    }
+                }
+                return;
+            }
+
+            // 橡皮
+            if (selectedTool === 'eraser') {
+                for (let dy = -brushRadius; dy <= brushRadius; dy++) {
+                    for (let dx = -brushRadius; dx <= brushRadius; dx++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && grid[ny][nx] !== 'border') {
+                            grid[ny][nx] = null;
+                            fireLifetime[ny][nx] = 0;
+                        }
+                    }
+                }
+                return;
+            }
+
+            // 普通材料
+            if (particleCount < MAX_PARTICLES) {
+                for (let dy = -brushRadius; dy <= brushRadius; dy++) {
+                    for (let dx = -brushRadius; dx <= brushRadius; dx++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && grid[ny][nx] === null) {
+                            grid[ny][nx] = selectedTool;
+                        }
+                    }
+                }
+            }
+        }
+
+        // ==================== 物理更新（优化版，单次遍历）====================
+        function updatePhysics() {
+            if (isPaused) return;
+
+            const now = Date.now();
+            // 控制物理帧率
+            if (physicsInterval) clearInterval(physicsInterval);
+            physicsInterval = setInterval(() => {
+                if (isPaused) return;
+
+                // 清空下一帧网格
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < cols; x++) {
+                        nextGrid[y][x] = null;
+                    }
+                }
+
+                // 先复制边框到下一帧
+                for (let x = 0; x < cols; x++) {
+                    nextGrid[0][x] = 'border';
+                    nextGrid[rows-1][x] = 'border';
+                }
+                for (let y = 0; y < rows; y++) {
+                    nextGrid[y][0] = 'border';
+                    nextGrid[y][cols-1] = 'border';
+                }
+
+                // 更新帧计数器（用于半秒效果）
+                frameCounter = (frameCounter + 1) % HALF_SECOND_FRAMES;
+                const isHalfSec = (frameCounter === 0);
+
+                // 主遍历：从下往上，从右向左，保证移动优先处理下方
+                for (let y = rows - 1; y >= 0; y--) {
+                    for (let x = cols - 1; x >= 0; x--) {
+                        const cell = grid[y][x];
+                        if (!cell || cell === 'border') continue; // 边框已在nextGrid中
+
+                        // 根据材料类型调用对应的更新函数
+                        switch (cell) {
+                            case 'earth': updateEarth(x, y, isHalfSec); break;
+                            case 'stone': updateStone(x, y, isHalfSec); break;
+                            case 'iron':  updateIron(x, y, isHalfSec); break;
+                            case 'water': updateWater(x, y, isHalfSec); break;
+                            case 'lava':  updateLava(x, y, isHalfSec); break;
+                            case 'acid':  updateAcid(x, y, isHalfSec); break;
+                            case 'cloud': updateCloud(x, y, isHalfSec); break;
+                            case 'fire':  updateFire(x, y, isHalfSec); break;
+                            case 'wood':  updateWood(x, y, isHalfSec); break;
+                            case 'plant': updatePlant(x, y, isHalfSec); break;
+                            case 'ice':   updateIce(x, y, isHalfSec); break;
+                            // 其他不可移动材料（如border已处理，human不在此处理）
+                            default: 
+                                // 默认保留在原地（如border已经复制，这里不会执行到）
+                                if (nextGrid[y][x] === null) nextGrid[y][x] = cell;
+                                break;
+                        }
+                    }
+                }
+
+                // 交换网格
+                [grid, nextGrid] = [nextGrid, grid];
+
+                // 更新人类
+                updateHumans();
+
+                // 更新统计信息
+                updateStats();
+            }, 1000 / PHYSICS_FPS);
+        }
+
+        // ---------- 固体材料更新（泥土、石头、铁）----------
+        function updateEarth(x, y, isHalfSec) {
+            // 尝试下落
+            tryMoveDown(x, y, 'earth', 0.3); // 30%概率尝试移动
+        }
+        function updateStone(x, y, isHalfSec) {
+            tryMoveDown(x, y, 'stone', 0.3);
+        }
+        function updateIron(x, y, isHalfSec) {
+            // 铁不移动，直接保留
+            if (nextGrid[y][x] === null) nextGrid[y][x] = 'iron';
+        }
+
+        // 通用下落尝试（概率控制移动频率）
+        function tryMoveDown(x, y, material, chance) {
+            if (Math.random() > chance) {
+                // 不移动，直接保留
+                if (nextGrid[y][x] === null) nextGrid[y][x] = material;
+                return;
+            }
+            if (y + 1 >= rows) {
+                if (nextGrid[y][x] === null) nextGrid[y][x] = material;
+                return;
+            }
+            // 检查下方
+            if (nextGrid[y+1][x] === null) {
+                // 下方空，可移动
+                nextGrid[y+1][x] = material;
+                return;
+            }
+            // 下方有液体且密度更大，可交换（下沉）
+            const below = grid[y+1][x]; // 注意用当前网格判断类型，因为nextGrid可能已被占用
+            if (below && (below === 'water' || below === 'lava' || below === 'acid') && MATERIALS[material].density > MATERIALS[below].density) {
+                // 将下方液体放到当前位置，固体移到下方
+                nextGrid[y][x] = below;      // 液体上升（实际上液体被固体挤到上面）
+                nextGrid[y+1][x] = material;
+                return;
+            }
+            // 尝试斜向下
+            const leftDown = x > 0 && nextGrid[y+1][x-1] === null;
+            const rightDown = x < cols-1 && nextGrid[y+1][x+1] === null;
+            if (leftDown && rightDown) {
+                const dir = Math.random() > 0.5 ? -1 : 1;
+                nextGrid[y+1][x+dir] = material;
+            } else if (leftDown) {
+                nextGrid[y+1][x-1] = material;
+            } else if (rightDown) {
+                nextGrid[y+1][x+1] = material;
+            } else {
+                // 无法移动，留在原地
+                if (nextGrid[y][x] === null) nextGrid[y][x] = material;
+            }
+        }
+
+        // ---------- 液体更新（水、岩浆、硫酸）----------
+        function updateWater(x, y, isHalfSec) {
+            // 半秒反应：水遇到岩浆、火、冰
+            if (isHalfSec) {
+                // 检查周围是否有岩浆
+                if (checkNeighbor(x, y, 'lava')) {
+                    // 水变云，岩浆50%变石头（在岩浆更新中处理，这里只变水）
+                    nextGrid[y][x] = 'cloud';
+                    return;
+                }
+                // 检查周围是否有火
+                if (checkNeighbor(x, y, 'fire') && Math.random() < 0.75) {
+                    nextGrid[y][x] = 'cloud';
+                    return;
+                }
+                // 检查周围是否有冰（冰融化？原逻辑是冰转换周围水，这里水遇冰不变，由冰处理）
+            }
+            // 液体流动
+            tryLiquidFlow(x, y, 'water', 0.2);
+        }
+
+        function updateLava(x, y, isHalfSec) {
+            // 半秒反应：岩浆遇到水/冰（在水/冰中处理），以及融化周围石头
+            if (isHalfSec) {
+                // 融化周围石头
+                const neighbors = getNeighbors(x, y);
+                for (let [nx, ny] of neighbors) {
+                    if (grid[ny][nx] === 'stone' && Math.random() < 0.25) {
+                        // 石头变岩浆（但需要确保nextGrid该位置未被占用）
+                        if (nextGrid[ny][nx] === null) {
+                            nextGrid[ny][nx] = 'lava';
+                        } else {
+                            // 如果已被占用，暂时不处理，但可能被覆盖
+                        }
+                    }
+                }
+            }
+            // 岩浆流动
+            tryLiquidFlow(x, y, 'lava', 0.2);
+        }
+
+        function updateAcid(x, y, isHalfSec) {
+            // 半秒反应：硫酸腐蚀周围
+            if (isHalfSec) {
+                const neighbors = getNeighbors(x, y);
+                for (let [nx, ny] of neighbors) {
+                    if (grid[ny][nx] && grid[ny][nx] !== 'border' && grid[ny][nx] !== 'acid') {
+                        if (Math.random() < 0.5) {
+                            // 腐蚀掉邻居
+                            // 注意：可能覆盖nextGrid中已有材料，这里直接设置，可能丢失其他材料
+                            // 简单起见，直接设置null
+                            nextGrid[ny][nx] = null;
+                        }
+                    }
+                }
+                // 硫酸自身消失概率
+                if (Math.random() < 0.3) { // 降低消失概率，原0.5太高
+                    // 自身消失，不保留
+                    return; // 不放入nextGrid
+                }
+            }
+            // 硫酸流动
+            tryLiquidFlow(x, y, 'acid', 0.2);
+        }
+
+        // 通用液体流动
+        function tryLiquidFlow(x, y, material, chance) {
+            if (Math.random() > chance) {
+                if (nextGrid[y][x] === null) nextGrid[y][x] = material;
+                return;
+            }
+            if (y + 1 >= rows) {
+                if (nextGrid[y][x] === null) nextGrid[y][x] = material;
+                return;
+            }
+            // 优先向下
+            if (nextGrid[y+1][x] === null) {
+                nextGrid[y+1][x] = material;
+                return;
+            }
+            // 尝试左右
+            const left = x > 0 && nextGrid[y][x-1] === null;
+            const right = x < cols-1 && nextGrid[y][x+1] === null;
+            if (left && right) {
+                const dir = Math.random() > 0.5 ? -1 : 1;
+                nextGrid[y][x+dir] = material;
+            } else if (left) {
+                nextGrid[y][x-1] = material;
+            } else if (right) {
+                nextGrid[y][x+1] = material;
+            } else {
+                if (nextGrid[y][x] === null) nextGrid[y][x] = material;
+            }
+        }
+
+        // ---------- 云更新（向上飘）----------
+        function updateCloud(x, y, isHalfSec) {
+            if (isHalfSec && Math.random() < 0.01) {
+                // 云变水
+                nextGrid[y][x] = 'water';
+                return;
+            }
+            // 向上移动
+            if (y - 1 < 0) {
+                if (nextGrid[y][x] === null) nextGrid[y][x] = 'cloud';
+                return;
+            }
+            // 尝试向上
+            if (nextGrid[y-1][x] === null) {
+                nextGrid[y-1][x] = 'cloud';
+                return;
+            }
+            // 尝试斜上
+            const leftUp = x > 0 && nextGrid[y-1][x-1] === null;
+            const rightUp = x < cols-1 && nextGrid[y-1][x+1] === null;
+            if (leftUp && rightUp) {
+                const dir = Math.random() > 0.5 ? -1 : 1;
+                nextGrid[y-1][x+dir] = 'cloud';
+            } else if (leftUp) {
+                nextGrid[y-1][x-1] = 'cloud';
+            } else if (rightUp) {
+                nextGrid[y-1][x+1] = 'cloud';
+            } else {
+                // 左右平飘
+                const left = x > 0 && nextGrid[y][x-1] === null;
+                const right = x < cols-1 && nextGrid[y][x+1] === null;
+                if (left && right) {
+                    const dir = Math.random() > 0.5 ? -1 : 1;
+                    nextGrid[y][x+dir] = 'cloud';
+                } else if (left) {
+                    nextGrid[y][x-1] = 'cloud';
+                } else if (right) {
+                    nextGrid[y][x+1] = 'cloud';
+                } else {
+                    if (nextGrid[y][x] === null) nextGrid[y][x] = 'cloud';
+                }
+            }
+        }
+
+        // ---------- 火更新 ----------
+        function updateFire(x, y, isHalfSec) {
+            const dt = 1 / PHYSICS_FPS; // 约0.0625
+            fireLifetime[y][x] -= dt;
+            
+            // 检查周围是否有木头或植物（火不熄灭）
+            const hasFuel = checkNeighbor(x, y, 'wood') || checkNeighbor(x, y, 'plant');
+            if (hasFuel) {
+                // 有燃料，寿命不减少（甚至增加？这里维持原逻辑：暂停计时）
+                // 为了模拟燃烧，可以稍微增加寿命或保持不变
+                // 保持原逻辑：不做处理，但下面点燃逻辑每半秒触发
+            } else {
+                // 无燃料，正常减少
+                if (fireLifetime[y][x] <= 0) {
+                    return; // 火消失
+                }
+            }
+
+            // 半秒点燃周围木头/植物
+            if (isHalfSec) {
+                const neighbors = getNeighbors(x, y);
+                for (let [nx, ny] of neighbors) {
+                    const cell = grid[ny][nx];
+                    if (cell === 'wood' && Math.random() < 0.2) {
+                        if (nextGrid[ny][nx] === null) {
+                            nextGrid[ny][nx] = 'fire';
+                            fireLifetime[ny][nx] = 4.0;
+                        }
+                    } else if (cell === 'plant' && Math.random() < 0.25) {
+                        if (nextGrid[ny][nx] === null) {
+                            nextGrid[ny][nx] = 'fire';
+                            fireLifetime[ny][nx] = 4.0;
+                        }
+                    }
+                }
+            }
+
+            // 火留在原位置（如果还没消失）
+            if (nextGrid[y][x] === null) {
+                nextGrid[y][x] = 'fire';
+            }
+        }
+
+        // ---------- 木头、植物、冰更新 ----------
+        function updateWood(x, y, isHalfSec) {
+            // 木头本身不移动，只可能被点燃（已在火中处理）
+            if (nextGrid[y][x] === null) nextGrid[y][x] = 'wood';
+        }
+        function updatePlant(x, y, isHalfSec) {
+            if (nextGrid[y][x] === null) nextGrid[y][x] = 'plant';
+        }
+        function updateIce(x, y, isHalfSec) {
+            // 半秒反应：冰转换周围水/云，以及遇岩浆/火（已在相应液体中处理）
+            if (isHalfSec) {
+                const neighbors = getNeighbors(x, y);
+                for (let [nx, ny] of neighbors) {
+                    const cell = grid[ny][nx];
+                    if (cell === 'water' && Math.random() < 0.75) {
+                        if (nextGrid[ny][nx] === null) nextGrid[ny][nx] = 'ice';
+                    } else if (cell === 'cloud' && Math.random() < 0.75) {
+                        if (nextGrid[ny][nx] === null) nextGrid[ny][nx] = 'water';
+                    }
+                }
+                // 遇岩浆已在岩浆中处理？但这里可以加一个自身融化
+                if (checkNeighbor(x, y, 'lava') && Math.random() < 0.5) {
+                    // 冰融化
+                    nextGrid[y][x] = 'water';
+                    return;
+                }
+                if (checkNeighbor(x, y, 'fire') && Math.random() < 0.75) {
+                    nextGrid[y][x] = 'water';
+                    return;
+                }
+            }
+            if (nextGrid[y][x] === null) nextGrid[y][x] = 'ice';
+        }
+
+        // ---------- 辅助函数 ----------
+        function getNeighbors(x, y) {
+            const dirs = [[0,-1],[0,1],[-1,0],[1,0]];
+            return dirs.map(([dx, dy]) => [x+dx, y+dy]).filter(([nx, ny]) => nx>=0 && nx<cols && ny>=0 && ny<rows);
+        }
+        function checkNeighbor(x, y, material) {
+            const neighbors = getNeighbors(x, y);
+            for (let [nx, ny] of neighbors) {
+                if (grid[ny][nx] === material) return true;
+            }
+            return false;
+        }
+
+        // ==================== 人类更新 ====================
+        function updateHumans() {
+            const NORMAL_GRAVITY = 0.08;
+            const WATER_GRAVITY = 0.02;
+            const BUOYANCY = -0.05;
+            const JUMP_SPEED = -0.4;
+            const NORMAL_MOVE = 0.06;
+            const WATER_MOVE = 0.03;
+
+            for (let i = humans.length - 1; i >= 0; i--) {
+                const human = humans[i];
+                if (!human.alive) {
+                    humans.splice(i, 1);
+                    continue;
+                }
+
+                // 碰撞检测（使用当前网格 grid）
+                if (checkHumanCollision(human, 'lava') || 
+                    checkHumanCollision(human, 'fire') || 
+                    checkHumanCollision(human, 'acid')) {
+                    human.alive = false;
+                    continue;
+                }
+
+                const isInWater = checkHumanCollision(human, 'water');
+                const currentGravity = isInWater ? WATER_GRAVITY : NORMAL_GRAVITY;
+                human.vy += currentGravity;
+                if (isInWater) human.vy += BUOYANCY;
+
+                // 垂直移动
+                const nextY = human.y + human.vy;
+                const footY = Math.floor(nextY + human.height / 2);
+                const headY = Math.floor(nextY - human.height / 2);
+                const leftX = Math.floor(human.x - human.width / 2);
+                const rightX = Math.floor(human.x + human.width / 2);
+
+                // 检查脚下是否有地面
+                let onGround = false;
+                for (let fx = leftX; fx <= rightX; fx++) {
+                    if (fx < 0 || fx >= cols || footY >= rows || footY < 0) continue;
+                    const cell = grid[footY][fx];
+                    if (cell && cell !== 'water' && cell !== 'cloud' && cell !== 'lava' && cell !== 'fire' && cell !== 'acid') {
+                        onGround = true;
+                        human.vy = 0;
+                        human.y = footY - human.height / 2 - 0.1;
+                        break;
+                    }
+                }
+
+                if (!onGround) {
+                    // 检查头顶碰撞（防止跳穿天花板）
+                    let hitHead = false;
+                    for (let fx = leftX; fx <= rightX; fx++) {
+                        if (fx < 0 || fx >= cols || headY < 0) continue;
+                        const cell = grid[headY][fx];
+                        if (cell && cell !== 'water' && cell !== 'cloud' && cell !== 'lava' && cell !== 'fire' && cell !== 'acid') {
+                            hitHead = true;
+                            human.vy = 0;
+                            human.y = headY + human.height / 2 + 0.1;
+                            break;
+                        }
+                    }
+                    if (!hitHead) human.y = nextY;
+                }
+
+                // 水平移动和跳跃
+                const moveSpeed = isInWater ? WATER_MOVE : NORMAL_MOVE;
+                if (onGround) {
+                    // 随机移动
+                    const rand = Math.random();
+                    if (rand < 0.35) {
+                        human.x -= moveSpeed;
+                    } else if (rand < 0.7) {
+                        human.x += moveSpeed;
+                    } else if (rand < 0.8 && human.jumpCooldown <= 0) {
+                        human.vy = JUMP_SPEED;
+                        human.jumpCooldown = 15; // 约1秒冷却（16fps）
+                    }
+                }
+                if (human.jumpCooldown > 0) human.jumpCooldown--;
+
+                // 边界限制
+                human.x = Math.max(human.width / 2 + 0.1, Math.min(cols - human.width / 2 - 0.1, human.x));
+                human.y = Math.max(0, human.y);
+            }
+        }
+
+        function checkHumanCollision(human, material) {
+            const minX = Math.floor(human.x - human.width / 2);
+            const maxX = Math.ceil(human.x + human.width / 2);
+            const minY = Math.floor(human.y - human.height / 2);
+            const maxY = Math.ceil(human.y + human.height / 2);
+            for (let y = minY; y <= maxY; y++) {
+                for (let x = minX; x <= maxX; x++) {
+                    if (x < 0 || x >= cols || y < 0 || y >= rows) continue;
+                    if (grid[y][x] === material) return true;
+                }
+            }
+            return false;
+        }
+
+        // ==================== 绘制 ====================
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const cell = grid[y][x];
+                    if (!cell) continue;
+                    
+                    if (cell === 'fire') {
+                        const lifetime = fireLifetime[y][x] || 4.0;
+                        const alpha = Math.max(0.3, lifetime / 4.0);
+                        ctx.fillStyle = `rgba(255, 153, 0, ${alpha})`;
+                        ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                        
+                        ctx.fillStyle = `rgba(255, 255, 0, ${alpha * 0.6})`;
+                        const offset = CELL_SIZE * 0.2;
+                        ctx.fillRect(
+                            x * CELL_SIZE + offset, 
+                            y * CELL_SIZE + offset, 
+                            CELL_SIZE - offset * 2, 
+                            CELL_SIZE - offset * 2
+                        );
+                    } else {
+                        ctx.fillStyle = MATERIALS[cell]?.color || '#fff';
+                        ctx.globalAlpha = cell === 'cloud' ? 0.8 : 1;
+                        ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    }
+                }
+            }
+            
+            // 绘制人类
+            for (const human of humans) {
+                if (human.alive) {
+                    ctx.fillStyle = MATERIALS.human.color;
+                    const drawX = (human.x - human.width / 2) * CELL_SIZE;
+                    const drawY = (human.y - human.height / 2) * CELL_SIZE;
+                    const drawW = human.width * CELL_SIZE;
+                    const drawH = human.height * CELL_SIZE;
+                    ctx.fillRect(drawX, drawY, drawW, drawH);
+                    
+                    ctx.fillStyle = '#000';
+                    const eyeSize = Math.max(2, drawW * 0.2);
+                    const eyeY = drawY + drawH * 0.3;
+                    const eyeX1 = drawX + drawW * 0.3 - eyeSize/2;
+                    const eyeX2 = drawX + drawW * 0.7 - eyeSize/2;
+                    ctx.fillRect(eyeX1, eyeY, eyeSize, eyeSize);
+                    ctx.fillRect(eyeX2, eyeY, eyeSize, eyeSize);
+                }
+            }
+            
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(CELL_SIZE, CELL_SIZE, (cols-2)*CELL_SIZE, (rows-2)*CELL_SIZE);
+            
+            requestAnimationFrame(draw);
+        }
+
+        // ==================== 统计信息 ====================
+        function updateStats() {
+            let particleCount = 0;
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    if (grid[y][x] && grid[y][x] !== 'border') particleCount++;
+                }
+            }
+            document.getElementById('particleCount').innerText = particleCount;
+            document.getElementById('humanCount').innerText = humans.length;
+        }
+
+        // ==================== 启动循环 ====================
+        function startLoops() {
+            draw();
+            updatePhysics(); // 启动物理定时器
+        }
+    </script>
+</body>
+</html>
