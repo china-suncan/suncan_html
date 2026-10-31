@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SunCan校园生存</title>
+    <style>
+        :root {
+            --bg: #eef4fc;
+            --card-bg: rgba(255,255,255,0.78);
+            --card-border: rgba(70,130,255,0.15);
+            --card-shadow-1: rgba(20,60,140,0.16);
+            --card-shadow-2: rgba(20,60,140,0.08);
+            --card-inset: rgba(255,255,255,0.7);
+            --primary: #1a5bbf;
+            --primary-light: #3a7bd5;
+            --primary-dark: #1a4d8f;
+            --primary-deeper: #1a3a6a;
+            --text-primary: #1a5bbf;
+            --text-secondary: #3a7bd5;
+            --text-dark: #1a4d8f;
+            --text-deeper: #1a3a6a;
+            --text-muted: #4a6a9a;
+            --text-win-highlight: #2a7bdf;
+            --stain-a: rgba(70,130,255,0.20);
+            --stain-b: rgba(30,80,210,0.06);
+            --stain-card-a: rgba(70,130,255,0.10);
+            --stain-card-b: rgba(30,80,210,0.03);
+            --stain-death-a: rgba(70,130,255,0.12);
+            --stain-death-b: rgba(30,80,210,0.04);
+            --btn-option-bg: rgba(255,255,255,0.3);
+            --btn-hover-bg: rgba(26,91,191,0.08);
+            --btn-hover-shadow: rgba(26,91,191,0.12);
+            --btn-skip-border: #7a9fd8;
+            --btn-skip-bg: rgba(255,255,255,0.2);
+            --btn-restart-bg: #1a5bbf;
+            --btn-restart-shadow: rgba(26,91,191,0.30);
+            --btn-restart-hover-bg: #124a9e;
+            --btn-restart-hover-shadow: rgba(26,91,191,0.40);
+            --btn-death-bg: #1a4d8f;
+            --btn-death-shadow: rgba(26,77,143,0.30);
+            --btn-death-hover-bg: #123a6a;
+            --btn-death-hover-shadow: rgba(26,77,143,0.40);
+            --overlay-bg: rgba(10,30,60,0.50);
+            --overlay-card-bg: rgba(255,255,255,0.94);
+            --overlay-card-border: rgba(70,130,255,0.20);
+            --overlay-card-shadow: rgba(0,20,60,0.25);
+            --flash-color: #fff;
+            --triangle-fill: rgba(58,123,213,0.12);
+            --triangle-stroke: #3a7bd5;
+            --triangle-drop-shadow: drop-shadow(0 8px 20px rgba(26,58,106,0.45));
+            --crack-color: #1a3a6a;
+            --crack-glow: rgba(26,58,106,0.5);
+            --drop-path: rgba(70,130,255,0.20);
+            --drop-dot: rgba(70,130,255,0.7);
+            --death-icon-color: #1a4d8f;
+            --death-icon-shadow: rgba(26,77,143,0.15);
+            --highlight-bg: rgba(26,91,191,0.08);
+            --lesson-num-shadow: rgba(26,91,191,0.15);
+            --lesson-num-line: #3a7bd5;
+            --scrollbar-track: rgba(26,91,191,0.05);
+            --scrollbar-thumb: rgba(26,91,191,0.25);
+            --scrollbar-thumb-hover: rgba(26,91,191,0.40);
+            --menu-btn-bg: rgba(255,255,255,0.35);
+            --menu-btn-border: #3a7bd5;
+            --menu-btn-hover-bg: rgba(26,91,191,0.10);
+            --settings-option-bg: rgba(255,255,255,0.35);
+            --settings-option-border: #3a7bd5;
+            --settings-active-border: #1a5bbf;
+            --settings-active-glow: rgba(26,91,191,0.25);
+            --history-card-bg: rgba(255,255,255,0.45);
+            --history-card-border: rgba(70,130,255,0.2);
+            --history-escape-border: #4a9e3f;
+            --history-escape-bg: rgba(74,158,63,0.06);
+            --history-escape-text: #3d8b37;
+            --history-death-border: rgba(200,60,60,0.3);
+            --history-death-bg: rgba(200,60,60,0.04);
+            --history-death-text: #a04040;
+            --history-live-border: #2a7bdf;
+            --history-live-bg: rgba(42,123,223,0.06);
+            --history-live-text: #1a5bbf;
+            --empty-text: #7a9fd8;
+            --toast-bg: rgba(26,77,143,0.9);
+        }
+        body.theme-red {
+            --bg: #0d0808;
+            --card-bg: rgba(22,10,10,0.88);
+            --card-border: rgba(200,50,50,0.22);
+            --card-shadow-1: rgba(140,20,20,0.28);
+            --card-shadow-2: rgba(140,20,20,0.12);
+            --card-inset: rgba(50,15,15,0.5);
+            --primary: #c0392b;
+            --primary-light: #d94a3a;
+            --primary-dark: #922b21;
+            --primary-deeper: #6b1a1a;
+            --text-primary: #c0392b;
+            --text-secondary: #d94a3a;
+            --text-dark: #922b21;
+            --text-deeper: #6b1a1a;
+            --text-muted: #9a4a4a;
+            --text-win-highlight: #e04040;
+            --stain-a: rgba(200,55,55,0.25);
+            --stain-b: rgba(170,30,30,0.08);
+            --stain-card-a: rgba(200,55,55,0.12);
+            --stain-card-b: rgba(170,30,30,0.04);
+            --stain-death-a: rgba(200,55,55,0.14);
+            --stain-death-b: rgba(170,30,30,0.05);
+            --btn-option-bg: rgba(22,10,10,0.45);
+            --btn-hover-bg: rgba(192,40,40,0.14);
+            --btn-hover-shadow: rgba(192,40,40,0.22);
+            --btn-skip-border: #c97070;
+            --btn-skip-bg: rgba(22,10,10,0.35);
+            --btn-restart-bg: #c0392b;
+            --btn-restart-shadow: rgba(192,40,40,0.35);
+            --btn-restart-hover-bg: #9e1f1f;
+            --btn-restart-hover-shadow: rgba(192,40,40,0.50);
+            --btn-death-bg: #922b21;
+            --btn-death-shadow: rgba(146,43,33,0.35);
+            --btn-death-hover-bg: #6b1a1a;
+            --btn-death-hover-shadow: rgba(146,43,33,0.50);
+            --overlay-bg: rgba(50,8,8,0.58);
+            --overlay-card-bg: rgba(22,10,10,0.94);
+            --overlay-card-border: rgba(200,50,50,0.28);
+            --overlay-card-shadow: rgba(60,5,5,0.40);
+            --flash-color: #0a0000;
+            --triangle-fill: rgba(200,50,50,0.18);
+            --triangle-stroke: #d94a3a;
+            --triangle-drop-shadow: drop-shadow(0 8px 20px rgba(100,20,20,0.55));
+            --crack-color: #6b1a1a;
+            --crack-glow: rgba(100,20,20,0.6);
+            --drop-path: rgba(200,55,55,0.25);
+            --drop-dot: rgba(200,55,55,0.75);
+            --death-icon-color: #922b21;
+            --death-icon-shadow: rgba(146,43,33,0.2);
+            --highlight-bg: rgba(192,40,40,0.12);
+            --lesson-num-shadow: rgba(192,40,40,0.18);
+            --lesson-num-line: #d94a3a;
+            --scrollbar-track: rgba(192,40,40,0.08);
+            --scrollbar-thumb: rgba(192,40,40,0.30);
+            --scrollbar-thumb-hover: rgba(192,40,40,0.50);
+            --menu-btn-bg: rgba(22,10,10,0.45);
+            --menu-btn-border: #d94a3a;
+            --menu-btn-hover-bg: rgba(192,40,40,0.15);
+            --settings-option-bg: rgba(22,10,10,0.45);
+            --settings-option-border: #d94a3a;
+            --settings-active-border: #e04040;
+            --settings-active-glow: rgba(224,64,64,0.35);
+            --history-card-bg: rgba(22,10,10,0.55);
+            --history-card-border: rgba(200,50,50,0.25);
+            --history-escape-border: #4a9e3f;
+            --history-escape-bg: rgba(74,158,63,0.08);
+            --history-escape-text: #5cb85c;
+            --history-death-border: rgba(220,70,70,0.35);
+            --history-death-bg: rgba(220,70,70,0.06);
+            --history-death-text: #d97070;
+            --history-live-border: #d94a3a;
+            --history-live-bg: rgba(217,74,58,0.08);
+            --history-live-text: #e04040;
+            --empty-text: #c97070;
+            --toast-bg: rgba(120,30,30,0.9);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            min-height: 100vh;
+            background: var(--bg);
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Helvetica Neue', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+            overflow-y: auto;
+            transition: background 0.5s;
+        }
+        .water-stains {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .stain {
+            position: absolute;
+            border-radius: 60% 40% 50% 30%/40% 50% 30% 60%;
+            background: radial-gradient(circle at 20% 30%, var(--stain-a), var(--stain-b));
+            filter: blur(4px);
+            opacity: 0.7;
+            transform: rotate(var(--rot, 0deg));
+            transition: background 0.5s;
+        }
+        .stain:nth-child(1) {
+            width: 180px;
+            height: 120px;
+            top: 5%;
+            left: 3%;
+            --rot: 15deg;
+        }
+        .stain:nth-child(2) {
+            width: 240px;
+            height: 160px;
+            bottom: 10%;
+            right: 2%;
+            --rot: -10deg;
+        }
+        .stain:nth-child(3) {
+            width: 130px;
+            height: 100px;
+            top: 40%;
+            left: 75%;
+            --rot: 8deg;
+        }
+        .stain:nth-child(4) {
+            width: 200px;
+            height: 140px;
+            top: 20%;
+            right: 8%;
+            --rot: -20deg;
+        }
+        .stain:nth-child(5) {
+            width: 160px;
+            height: 110px;
+            bottom: 30%;
+            left: 5%;
+            --rot: 25deg;
+        }
+        .stain:nth-child(6) {
+            width: 220px;
+            height: 150px;
+            top: 60%;
+            left: 15%;
+            --rot: -5deg;
+        }
+        .stain:nth-child(7) {
+            width: 100px;
+            height: 80px;
+            top: 12%;
+            left: 45%;
+            --rot: 12deg;
+        }
+        .stain:nth-child(8) {
+            width: 190px;
+            height: 130px;
+            bottom: 5%;
+            left: 50%;
+            --rot: -18deg;
+        }
+
+        .menu-screen,
+        .settings-screen,
+        .history-screen {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            animation: fadeInUp 0.6s ease;
+        }
+        .menu-screen.hidden,
+        .settings-screen.hidden,
+        .history-screen.hidden {
+            display: none;
+        }
+        @keyframes fadeInUp {
+            0% {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .menu-screen {
+            gap: 36px;
+        }
+        .menu-title {
+            font-size: 52px;
+            font-weight: 900;
+            color: var(--primary);
+            letter-spacing: 4px;
+            text-shadow: 0 3px 16px var(--lesson-num-shadow);
+            transition: color 0.5s, text-shadow 0.5s;
+        }
+        .menu-subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            letter-spacing: 6px;
+            opacity: 0.75;
+            margin-top: -24px;
+            transition: color 0.5s;
+        }
+        .menu-divider {
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--primary-light), transparent);
+            border-radius: 4px;
+            transition: background 0.5s;
+        }
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            width: 220px;
+        }
+        .menu-btn {
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--menu-btn-bg);
+            border: 2px solid var(--menu-btn-border);
+            border-radius: 60px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+            cursor: pointer;
+            transition: all 0.25s;
+            letter-spacing: 3px;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .menu-btn:hover {
+            background: var(--menu-btn-hover-bg);
+            border-color: var(--primary);
+            transform: scale(1.04);
+            box-shadow: 0 8px 28px var(--btn-hover-shadow);
+        }
+        .menu-btn:active {
+            transform: scale(0.96);
+        }
+        .menu-btn.sub-btn {
+            font-size: 17px;
+            letter-spacing: 2px;
+            border-color: var(--btn-skip-border);
+            color: var(--text-secondary);
+        }
+        .menu-btn.sub-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .settings-screen {
+            gap: 28px;
+        }
+        .settings-title,
+        .history-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: 3px;
+            transition: color 0.5s;
+        }
+        .settings-subtitle {
+            font-size: 15px;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            margin-top: -18px;
+            transition: color 0.5s;
+        }
+        .theme-options {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .theme-option {
+            width: 130px;
+            height: 160px;
+            border-radius: 24px;
+            cursor: pointer;
+            border: 3px solid var(--settings-option-border);
+            background: var(--settings-option-bg);
+            backdrop-filter: blur(6px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .theme-option.active {
+            border-color: var(--settings-active-border);
+            box-shadow: 0 0 0 6px var(--settings-active-glow);
+        }
+        .theme-preview {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+        }
+        .theme-preview.blue-white {
+            background: linear-gradient(135deg, #1a5bbf 0%, #3a7bd5 40%, #eef4fc 60%, #fff 100%);
+        }
+        .theme-preview.red-black {
+            background: linear-gradient(135deg, #c0392b 0%, #d94a3a 40%, #1a0505 60%, #0d0000 100%);
+        }
+        .theme-label {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .theme-check {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            font-size: 20px;
+            color: var(--settings-active-border);
+            opacity: 0;
+        }
+        .theme-option.active .theme-check {
+            opacity: 1;
+        }
+        .back-btn {
+            padding: 12px 36px;
+            background: var(--btn-skip-bg);
+            border: 2px solid var(--btn-skip-border);
+            border-radius: 60px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.25s;
+            letter-spacing: 2px;
+            backdrop-filter: blur(6px);
+        }
+        .back-btn:hover {
+            background: var(--btn-hover-bg);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .history-screen {
+            gap: 22px;
+            width: 100%;
+            max-width: 520px;
+        }
+        .history-stats {
+            font-size: 14px;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            margin-top: -12px;
+            transition: color 0.5s;
+        }
+        .history-list-container {
+            width: 100%;
+            max-height: 55vh;
+            overflow-y: auto;
+            padding: 0 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .history-empty {
+            font-size: 16px;
+            color: var(--empty-text);
+            padding: 40px 20px;
+            letter-spacing: 2px;
+            opacity: 0.7;
+        }
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            border-radius: 20px;
+            border: 2px solid var(--history-card-border);
+            background: var(--history-card-bg);
+            backdrop-filter: blur(4px);
+            text-align: left;
+            animation: itemSlide 0.4s ease;
+        }
+        @keyframes itemSlide {
+            0% {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        .history-item.type-win {
+            border-color: var(--history-escape-border);
+            background: var(--history-escape-bg);
+        }
+        .history-item.type-death {
+            border-color: var(--history-death-border);
+            background: var(--history-death-bg);
+        }
+        .history-item.type-live {
+            border-color: var(--history-live-border);
+            background: var(--history-live-bg);
+        }
+        .history-item-icon {
+            font-size: 36px;
+            font-weight: 900;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .type-win .history-item-icon {
+            color: var(--history-escape-text);
+            background: rgba(74, 158, 63, 0.1);
+        }
+        .type-death .history-item-icon {
+            color: var(--history-death-text);
+            background: rgba(200, 60, 60, 0.1);
+        }
+        .type-live .history-item-icon {
+            color: var(--history-live-text);
+            background: rgba(42, 123, 223, 0.1);
+        }
+        .history-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .history-item-reason {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-dark);
+            line-height: 1.4;
+        }
+        .history-item-detail {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .history-item-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            letter-spacing: 1px;
+        }
+        .history-clear-btn {
+            padding: 10px 28px;
+            background: transparent;
+            border: 2px solid var(--btn-skip-border);
+            border-radius: 60px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.25s;
+            letter-spacing: 2px;
+        }
+        .history-clear-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--btn-hover-bg);
+        }
+
+        .game-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 560px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px) saturate(160%);
+            border-radius: 48px 48px 40px 40px;
+            padding: 40px 32px 36px;
+            box-shadow: 0 20px 60px var(--card-shadow-1), 0 8px 24px var(--card-shadow-2), inset 0 1px 0 var(--card-inset);
+            border: 1px solid var(--card-border);
+            overflow: hidden;
+            transition: background 0.5s, border-color 0.5s, box-shadow 0.5s;
+        }
+        .game-container.hidden {
+            display: none;
+        }
+        .card-stain {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, var(--stain-card-a), var(--stain-card-b));
+            filter: blur(5px);
+            pointer-events: none;
+        }
+        .card-stain:nth-of-type(1) {
+            width: 120px;
+            height: 80px;
+            top: -10px;
+            right: -10px;
+            transform: rotate(20deg);
+        }
+        .card-stain:nth-of-type(2) {
+            width: 90px;
+            height: 70px;
+            bottom: 10px;
+            left: -5px;
+            transform: rotate(-15deg);
+        }
+        .lesson-header {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .lesson-number {
+            font-size: 38px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: 2px;
+            text-shadow: 0 2px 12px var(--lesson-num-shadow);
+            display: inline-block;
+            position: relative;
+            transition: color 0.5s, text-shadow 0.5s;
+        }
+        .lesson-number::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--lesson-num-line), transparent);
+            border-radius: 4px;
+        }
+        .lesson-sub {
+            display: block;
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-top: 10px;
+            opacity: 0.7;
+            letter-spacing: 4px;
+        }
+        .lesson-desc {
+            text-align: center;
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--text-dark);
+            margin: 28px 0 32px;
+            padding: 0 8px;
+            line-height: 1.6;
+            min-height: 3.4em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+        .option-btn {
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--btn-option-bg);
+            border: 2px solid var(--primary-light);
+            border-radius: 60px;
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.25s;
+            text-align: center;
+            backdrop-filter: blur(4px);
+        }
+        .option-btn:hover:not(:disabled) {
+            background: var(--btn-hover-bg);
+            border-color: var(--primary);
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px var(--btn-hover-shadow);
+        }
+        .option-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .action-bar {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+        .btn-skip {
+            padding: 12px 40px;
+            background: var(--btn-skip-bg);
+            border: 2px solid var(--btn-skip-border);
+            border-radius: 60px;
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.25s;
+            letter-spacing: 2px;
+            backdrop-filter: blur(4px);
+        }
+        .btn-skip:hover:not(:disabled) {
+            background: var(--btn-hover-bg);
+            border-color: var(--primary);
+            transform: scale(1.04);
+            box-shadow: 0 6px 20px var(--btn-hover-shadow);
+        }
+        .card-triangle-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 20;
+            display: none;
+            overflow: hidden;
+            border-radius: inherit;
+        }
+        .card-triangle-overlay.active {
+            display: block;
+        }
+        .card-triangle-svg {
+            position: absolute;
+            top: -120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90px;
+            height: 108px;
+            opacity: 0;
+            z-index: 22;
+            filter: var(--triangle-drop-shadow);
+            transition: none;
+        }
+        .card-triangle-svg polygon {
+            fill: var(--triangle-fill);
+            stroke: var(--triangle-stroke);
+            stroke-width: 4;
+            stroke-linejoin: round;
+        }
+        .card-crack-line {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 3px;
+            height: 0%;
+            background: var(--crack-color);
+            transform: translateX(-50%);
+            opacity: 0;
+            box-shadow: 0 0 12px var(--crack-glow);
+            z-index: 21;
+        }
+        .card-crack-line.animating {
+            transition: height 0.45s ease-out, opacity 0.4s ease-out;
+        }
+        .white-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--flash-color);
+            z-index: 90;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.8s;
+        }
+        .white-flash.active {
+            opacity: 1;
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--overlay-bg);
+            backdrop-filter: blur(12px) saturate(160%);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 24px;
+        }
+        .overlay.show {
+            display: flex;
+            animation: overlayFade 0.5s ease;
+        }
+        @keyframes overlayFade {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+        .overlay-card {
+            max-width: 480px;
+            width: 100%;
+            background: var(--overlay-card-bg);
+            border-radius: 48px;
+            padding: 44px 36px 40px;
+            text-align: center;
+            box-shadow: 0 40px 100px var(--overlay-card-shadow);
+            border: 1px solid var(--overlay-card-border);
+            position: relative;
+            overflow: hidden;
+            animation: cardPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes cardPop {
+            0% {
+                opacity: 0;
+                transform: scale(0.85) translateY(30px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        .card-stain-death {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 30%, var(--stain-death-a), var(--stain-death-b));
+            filter: blur(6px);
+            pointer-events: none;
+        }
+        .card-stain-death:nth-of-type(1) {
+            width: 160px;
+            height: 120px;
+            top: -20px;
+            left: -30px;
+            transform: rotate(10deg);
+        }
+        .card-stain-death:nth-of-type(2) {
+            width: 130px;
+            height: 100px;
+            bottom: -10px;
+            right: -20px;
+            transform: rotate(-15deg);
+        }
+        .death-icon {
+            font-size: 100px;
+            font-weight: 900;
+            color: var(--death-icon-color);
+            margin-bottom: 6px;
+            display: inline-block;
+            text-shadow: 0 4px 20px var(--death-icon-shadow);
+            position: relative;
+            z-index: 1;
+        }
+        .water-drop-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+        .drop-path {
+            position: absolute;
+            top: -10px;
+            width: 3px;
+            background: var(--drop-path);
+            border-radius: 2px;
+            filter: blur(2px);
+            opacity: 0;
+            transition: height 1.8s ease-in, opacity 0.4s;
+        }
+        .drop-dot {
+            position: absolute;
+            width: 8px;
+            height: 12px;
+            background: var(--drop-dot);
+            border-radius: 50% 50% 50% 50%/60% 60% 40% 40%;
+            filter: blur(0.5px);
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: top 1.8s ease-in, opacity 0.4s;
+        }
+        .overlay-card.death .end-title {
+            color: var(--text-dark);
+            font-size: 32px;
+            font-weight: 800;
+            margin: 8px 0 6px;
+        }
+        .overlay-card.death .end-title .highlight {
+            color: var(--text-primary);
+            background: var(--highlight-bg);
+            padding: 0 6px;
+            border-radius: 8px;
+        }
+        .overlay-card.death .end-reason {
+            font-size: 20px;
+            color: var(--text-deeper);
+            margin: 12px 0 24px;
+            line-height: 1.7;
+        }
+        .overlay-card.win .end-title {
+            color: var(--text-primary);
+            font-size: 34px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .overlay-card.win .end-title .highlight {
+            color: var(--text-win-highlight);
+        }
+        .overlay-card.win .end-reason {
+            font-size: 22px;
+            color: var(--text-dark);
+            margin: 10px 0 28px;
+        }
+        .btn-restart {
+            padding: 14px 48px;
+            background: var(--btn-restart-bg);
+            border: none;
+            border-radius: 60px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.25s;
+            letter-spacing: 2px;
+            box-shadow: 0 8px 28px var(--btn-restart-shadow);
+            margin: 0 6px;
+        }
+        .btn-restart:hover {
+            background: var(--btn-restart-hover-bg);
+            transform: scale(1.04);
+            box-shadow: 0 12px 36px var(--btn-restart-hover-shadow);
+        }
+        .btn-restart.death-btn {
+            background: var(--btn-death-bg);
+        }
+        .btn-restart.quit-btn {
+            background: var(--btn-skip-bg);
+            color: var(--text-secondary);
+            border: 2px solid var(--btn-skip-border);
+            box-shadow: none;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--toast-bg);
+            color: #fff;
+            padding: 12px 28px;
+            border-radius: 30px;
+            font-size: 15px;
+            letter-spacing: 2px;
+            z-index: 200;
+            opacity: 0;
+            transition: opacity 0.4s;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 480px) {
+            .menu-title {
+                font-size: 36px;
+            }
+            .game-container {
+                padding: 28px 18px;
+                border-radius: 32px;
+            }
+            .lesson-number {
+                font-size: 30px;
+            }
+            .option-btn {
+                font-size: 16px;
+                padding: 14px 16px;
+            }
+            .btn-skip {
+                font-size: 15px;
+                padding: 10px 28px;
+            }
+            .history-title {
+                font-size: 26px;
+            }
+            .history-item {
+                padding: 12px 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="water-stains">
+        <div class="stain"></div><div class="stain"></div><div class="stain"></div><div class="stain"></div>
+        <div class="stain"></div><div class="stain"></div><div class="stain"></div><div class="stain"></div>
+    </div>
+    <div class="white-flash" id="whiteFlash"></div>
+    <div class="toast" id="toast"></div>
+
+    <!-- 主菜单 -->
+    <div class="menu-screen" id="menuScreen">
+        <div class="menu-title">校园生存</div>
+        <div class="menu-subtitle">你 能 活 过 一 天 吗 ？</div>
+        <div class="menu-divider"></div>
+        <div class="menu-buttons">
+            <button class="menu-btn" id="startBtn">开 始</button>
+            <button class="menu-btn sub-btn" id="historyBtn">结 局</button>
+            <button class="menu-btn sub-btn" id="settingsBtn">设 置</button>
+        </div>
+    </div>
+
+    <!-- 设置 -->
+    <div class="settings-screen hidden" id="settingsScreen">
+        <div class="settings-title">设置</div>
+        <div class="settings-subtitle">-- 颜色主题 --</div>
+        <div class="theme-options">
+            <div class="theme-option active" id="themeBlue" data-theme="blue">
+                <span class="theme-check">&#10003;</span>
+                <div class="theme-preview blue-white"></div>
+                <span class="theme-label">蓝 白</span>
+            </div>
+            <div class="theme-option" id="themeRed" data-theme="red">
+                <span class="theme-check">&#10003;</span>
+                <div class="theme-preview red-black"></div>
+                <span class="theme-label">红 黑</span>
+            </div>
+        </div>
+        <button class="back-btn" id="settingsBackBtn">← 返回</button>
+    </div>
+
+    <!-- 结局页面 -->
+    <div class="history-screen hidden" id="historyScreen">
+        <div class="history-title">结局记录</div>
+        <div class="history-stats" id="historyStats">暂无记录</div>
+        <div class="history-list-container" id="historyList"></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+            <button class="history-clear-btn" id="historyClearBtn">清空记录</button>
+            <button class="back-btn" id="historyBackBtn">← 返回</button>
+        </div>
+    </div>
+
+    <!-- 游戏卡片 -->
+    <div class="game-container hidden" id="gameContainer">
+        <div class="card-stain"></div>
+        <div class="card-stain"></div>
+        <div class="lesson-header">
+            <span class="lesson-number" id="lessonNumber"></span>
+            <span class="lesson-sub" id="lessonSub">-- 生存挑战 --</span>
+        </div>
+        <div class="lesson-desc" id="lessonDesc"></div>
+        <div class="options-list" id="optionsList"></div>
+        <div class="action-bar"><button class="btn-skip" id="skipBtn">跳过</button></div>
+        <div class="card-triangle-overlay" id="cardTriangleOverlay">
+            <svg class="card-triangle-svg" id="cardTriangleSvg" viewBox="0 0 100 120">
+                <polygon points="50,0 0,120 100,120" />
+            </svg>
+            <div class="card-crack-line" id="cardCrackLine"></div>
+        </div>
+    </div>
+
+    <!-- 结局弹窗 -->
+    <div class="overlay" id="overlay">
+        <div class="overlay-card" id="overlayCard">
+            <div class="card-stain-death"></div>
+            <div class="card-stain-death"></div>
+            <div class="water-drop-area" id="waterDropArea"></div>
+            <div class="death-icon" id="deathIcon">死</div>
+            <div class="end-title" id="endTitle"></div>
+            <div class="end-reason" id="endReason"></div>
+            <div class="end-sub" id="endSub">-- 校园生存 --</div>
+            <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+                <button class="btn-restart" id="restartBtn">重来</button>
+                <button class="btn-restart quit-btn" id="quitBtn">退出</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const HISTORY_KEY = 'campus-survival-history';
+            const MAX_HISTORY = 100;
+            function loadHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch (e) { return []; } }
+            function saveHistory(arr) { try { localStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(0, MAX_HISTORY))); } catch (e) {} }
+
+            // ===== 蓝白模式：全部死局，文案已按你提供的完整版优化 =====
+            const COURSES_BLUE_RANDOM = [{
+                id: 'c1',
+                description: '你上课时突然口渴难耐',
+                options: [
+                    { text: '快速喝一口水', outcome: 'die', consequence: '上课时间严禁喝水，你刚拧开瓶盖就被老师看见。老师以「不尊重课堂纪律」为由，当众用三角板击碎你的头颅。' },
+                    { text: '忍住不喝', outcome: 'die', consequence: '你咬牙坚持，但口渴感越来越强烈，喉咙像被火烧一样。最终你因严重脱水，在座位上活生生渴死。' },
+                    { text: '趁老师不注意时喝', outcome: 'die', consequence: '你趁老师转身写黑板时迅速喝了一口，却被后排同学偷偷举报。老师怒不可遏，用三角板击碎你的头颅。' }
+                ]
+            }, {
+                id: 'c2',
+                description: '跑步的时候心脏有隐隐约约疼痛',
+                options: [
+                    { text: '趁老师不注意走一会', outcome: 'die', consequence: '你刚放慢脚步，就被老师的鹰眼发现。老师当场宣布加跑十圈，你咬牙跑完后心脏骤停，活生生猝死。' },
+                    { text: '忍痛继续跑', outcome: 'die', consequence: '你强忍疼痛继续跑，心脏负荷越来越大。跑到第三圈时你两眼一黑，重重摔倒在地，活生生猝死。' },
+                    { text: '假装系鞋带', outcome: 'die', consequence: '你蹲下假装系鞋带，被旁边的同学看出你在偷懒并举报。老师发现后加罚十圈，你活生生猝死。' },
+                    { text: '故意摔倒', outcome: 'die', consequence: '你假装摔倒，后面的同学来不及刹车，重重踩踏在你身上，造成严重内伤。学校为防事情扩散影响名声，拖延送医，你因内出血未能及时救治而死。' }
+                ]
+            }, {
+                id: 'c3',
+                description: '考试有一道不会的大题',
+                options: [
+                    { text: '偷偷看旁边同学', outcome: 'die', consequence: '你偷偷瞄向旁边同学的卷子，被老师当场抓个正着。老师以「考试作弊」为由，在全校同学面前用三角板击碎你的头颅。' },
+                    { text: '不会的就不写', outcome: 'die', consequence: '你把大题空着交卷。老师认为你上课不认真听讲，空题是绝对不允许的，用三角板击碎你的头颅。' },
+                    { text: '随便写一下', outcome: 'die', consequence: '你胡乱写了几笔。老师认为你瞎写是在挑衅他的教学权威，用三角板击碎你的头颅。' }
+                ]
+            }, {
+                id: 'c4',
+                description: '你憋尿憋得快要爆炸',
+                options: [
+                    { text: '举手报告上厕所', outcome: 'die', consequence: '你举手报告想上厕所。老师怒斥「就你事多，下课怎么不去」，随后用三角板击碎你的头颅。' },
+                    { text: '悄悄尿在瓶子里', outcome: 'die', consequence: '你偷偷拿出瓶子，但手抖发出水声被老师听见。老师怒斥你「变态」，用三角板击碎你的头颅。' },
+                    { text: '强行憋住', outcome: 'die', consequence: '你拼命憋住，最终膀胱破裂。学校为防事情扩散影响名声，拖延送医，你因感染恶化而死。' }
+                ]
+            }, {
+                id: 'c5',
+                description: '老师点名让你朗读课文，但你有一个字不认识',
+                options: [
+                    { text: '凭感觉瞎读一个音', outcome: 'die', consequence: '你胡乱读了一个音，结果读错了。老师怒斥「昨天不是让预习了吗，这么简单的字都不会」，用三角板击碎你的头颅。' },
+                    { text: '告诉老师，这个字我不认识', outcome: 'die', consequence: '你老实承认不认识这个字。老师怒斥「昨天不是让预习了吗」，认为你态度不端正，用三角板击碎你的头颅。' },
+                    { text: '跳过这个字', outcome: 'die', consequence: '你跳过这个字继续读，结果整句话的意思完全变了。老师认为你故意篡改课文内容，用三角板击碎你的头颅。' },
+                    { text: '向同桌使眼神求救', outcome: 'die', consequence: '你向同桌使眼色，被老师误认为你在瞪他。老师认定你目无尊长，用三角板击碎你的头颅。' }
+                ]
+            }, {
+                id: 'c6',
+                description: '教室里一片死寂，你突然很想打喷嚏',
+                options: [
+                    { text: '憋住不打', outcome: 'die', consequence: '你拼命憋住，气流倒灌冲破肺泡，造成严重内伤，当场死亡。' },
+                    { text: '打出来', outcome: 'die', consequence: '安静的教室里响起你响亮的喷嚏声。老师认为你故意破坏课堂纪律，走到你面前用三角板击碎头颅示众。' }
+                ]
+            }];
+            const FINAL_COURSE_BLUE = {
+                id: 'c7',
+                description: '你背起书包准备逃离，发现数学老师站在门口',
+                options: [
+                    { text: '说「老师再见」', outcome: 'die', consequence: '你对老师说「老师再见」，老师把「见」听成「贱」，认定你辱骂老师、目无尊长，用三角板击碎你的头颅。' },
+                    { text: '低头沉默溜走', outcome: 'die', consequence: '你低着头想溜走。老师拦住你说「见到老师不知道问好，目无尊长」，用三角板击碎你的头颅。' }
+                ]
+            };
+
+            // ===== 红黑模式：部分存活，文案同样保持完整、合理 =====
+            const COURSES_RED_RANDOM = [{
+                id: 'c1',
+                description: '你上课时突然口渴难耐',
+                options: [
+                    { text: '快速喝一口水', outcome: 'live', consequence: '老师提醒你别呛到，你喝完不渴了，继续上课。' },
+                    { text: '忍住不喝', outcome: 'die', consequence: '你咬牙坚持，但口渴感越来越强烈，喉咙像被火烧一样。最终你因严重脱水，在座位上活生生渴死。' },
+                    { text: '趁老师不注意时喝', outcome: 'live', consequence: '你趁老师转身写黑板时迅速喝了一口，没有被任何人发现，你喝完不渴了。' }
+                ]
+            }, {
+                id: 'c2',
+                description: '跑步时心脏隐隐作痛',
+                options: [
+                    { text: '趁老师不注意走一会', outcome: 'die', consequence: '你刚放慢脚步，就被老师的鹰眼发现。老师当场宣布加跑三圈，你咬牙跑完后心脏骤停，活生生猝死。' },
+                    { text: '忍痛继续跑', outcome: 'die', consequence: '你强忍疼痛继续跑，心脏负荷越来越大。跑到第三圈时你两眼一黑，重重摔倒在地，活生生猝死。' },
+                    { text: '假装系鞋带', outcome: 'live', consequence: '你蹲下系好鞋带，起身后疼痛感消失了，顺利跑完全程。' },
+                    { text: '故意摔倒', outcome: 'live', consequence: '你摔倒后被同学扶起，老师让你去旁边休息，你逃过一劫。' }
+                ]
+            }, {
+                id: 'c3',
+                description: '考试有一道不会的大题',
+                options: [
+                    { text: '偷偷看旁边同学', outcome: 'die', consequence: '你偷偷瞄向旁边同学的卷子，被老师当场抓个正着。老师以「考试作弊」为由，在全校同学面前用三角板击碎你的头颅。' },
+                    { text: '不会的就不写', outcome: 'live', consequence: '你把大题空着交卷。老师没有发火，反而把你叫到办公室单独讲解。' },
+                    { text: '随便写一下', outcome: 'live', consequence: '你胡乱写了几笔。老师看到后只是摇了摇头，没有追究。' }
+                ]
+            }, {
+                id: 'c4',
+                description: '你憋尿憋得快要爆炸',
+                options: [
+                    { text: '举手报告上厕所', outcome: 'live', consequence: '你举手报告，老师看了你一眼说「快去快回」。你成功清空膀胱。' },
+                    { text: '悄悄尿在瓶子里', outcome: 'die', consequence: '你偷偷拿出瓶子，但手抖发出水声被老师听见。老师怒斥你「变态」，用三角板击碎你的头颅。' },
+                    { text: '强行憋住', outcome: 'die', consequence: '你拼命憋住，最终膀胱破裂。学校为防事情扩散影响名声，拖延送医，你因感染恶化而死。' }
+                ]
+            }, {
+                id: 'c5',
+                description: '老师点名朗读，有一个字不认识',
+                options: [
+                    { text: '凭感觉瞎读', outcome: 'live', consequence: '你读错了音，老师纠正了你的读音，没有为难你。' },
+                    { text: '告诉老师不认识', outcome: 'live', consequence: '你老实承认，老师教你读了这个字，并提醒你下次预习。' },
+                    { text: '跳过这个字', outcome: 'die', consequence: '你跳过这个字继续读，结果整句话的意思完全变了。老师认为你故意篡改课文内容，用三角板击碎你的头颅。' },
+                    { text: '向同桌求救', outcome: 'live', consequence: '同桌悄悄递来纸条，你照着纸条读完了课文，有惊无险。' }
+                ]
+            }, {
+                id: 'c6',
+                description: '教室死寂，突然想打喷嚏',
+                options: [
+                    { text: '憋住不打', outcome: 'die', consequence: '你拼命憋住，气流倒灌冲破肺泡，造成严重内伤，当场死亡。' },
+                    { text: '打出来', outcome: 'live', consequence: '你打了一个喷嚏。老师只是瞥了你一眼，说「注意身体」，然后继续上课。' }
+                ]
+            }];
+            const FINAL_COURSE_RED = {
+                id: 'c7',
+                description: '背起书包逃离，数学老师站在门口',
+                options: [
+                    { text: '说「老师再见」', outcome: 'live', consequence: '你对老师说「老师再见」，老师点头回应，你顺利离开校园。' },
+                    { text: '低头沉默溜走', outcome: 'live', consequence: '你低着头快速溜走，老师没有在意，你成功离开校园。' }
+                ]
+            };
+
+            let state = {
+                courses: [],
+                currentIndex: 0,
+                isEnded: false,
+                isTransitioning: false,
+                deathTimerIds: [],
+                currentTheme: 'blue',
+                sessionId: null
+            };
+            const $ = id => document.getElementById(id);
+            const menuScreen = $('menuScreen'),
+                settingsScreen = $('settingsScreen'),
+                historyScreen = $('historyScreen');
+            const gameContainer = $('gameContainer'),
+                overlay = $('overlay');
+            const lessonNumber = $('lessonNumber'),
+                lessonDesc = $('lessonDesc'),
+                optionsList = $('optionsList'),
+                skipBtn = $('skipBtn');
+            const endTitle = $('endTitle'),
+                endReason = $('endReason'),
+                deathIcon = $('deathIcon');
+            const restartBtn = $('restartBtn'),
+                quitBtn = $('quitBtn');
+            const whiteFlash = $('whiteFlash'),
+                waterDropArea = $('waterDropArea');
+            const cardTriangleOverlay = $('cardTriangleOverlay'),
+                cardTriangleSvg = $('cardTriangleSvg'),
+                cardCrackLine = $('cardCrackLine');
+            const historyList = $('historyList'),
+                historyStats = $('historyStats'),
+                toast = $('toast');
+            const overlayCard = $('overlayCard');
+            const endSub = $('endSub');
+
+            function shuffle(a) {
+                const r = [...a];
+                for (let i = r.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [r[i], r[j]] = [r[j], r[i]];
+                }
+                return r;
+            }
+
+            function clearTimers() {
+                state.deathTimerIds.forEach(id => clearTimeout(id));
+                state.deathTimerIds = [];
+            }
+
+            function resetCardAnim() {
+                cardTriangleOverlay.classList.remove('active');
+                cardTriangleSvg.style.transition = 'none';
+                cardTriangleSvg.style.top = '-120px';
+                cardTriangleSvg.style.opacity = '0';
+                cardCrackLine.classList.remove('animating');
+                cardCrackLine.style.height = '0%';
+                cardCrackLine.style.opacity = '0';
+            }
+
+            function showToast(msg) {
+                toast.textContent = msg;
+                toast.classList.add('show');
+                clearTimeout(toast._timeout);
+                toast._timeout = setTimeout(() => toast.classList.remove('show'), 2000);
+            }
+
+            function addRecord(record) {
+                const h = loadHistory();
+                h.unshift(record);
+                saveHistory(h);
+            }
+
+            function formatTime(ts) {
+                const d = new Date(ts);
+                const pad = n => String(n).padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            }
+
+            function renderHistory() {
+                const h = loadHistory();
+                historyList.innerHTML = '';
+                if (h.length === 0) {
+                    historyStats.textContent = '暂无记录';
+                    historyList.innerHTML = '<div class="history-empty">还没有任何结局记录，去玩一局吧</div>';
+                    return;
+                }
+                const deaths = h.filter(r => r.type === 'death').length;
+                const wins = h.filter(r => r.type === 'win').length;
+                const lives = h.filter(r => r.type === 'live').length;
+                let maxStreak = 0,
+                    currentStreak = 0;
+                const sessions = {};
+                h.forEach(r => {
+                    if (r.sessionId) {
+                        if (!sessions[r.sessionId]) sessions[r.sessionId] = [];
+                        sessions[r.sessionId].push(r);
+                    }
+                });
+                Object.values(sessions).forEach(recs => {
+                    let streak = 0;
+                    recs.sort((a, b) => a.timestamp - b.timestamp).forEach(r => {
+                        if (r.type === 'live') streak++;
+                        else if (r.type === 'win') { streak = 7; } else streak = 0;
+                        if (streak > maxStreak) maxStreak = streak;
+                    });
+                });
+                historyStats.textContent = `共 ${h.length} 次记录 · 死亡 ${deaths} · 存活 ${lives} · 通关 ${wins} · 最大连续存活 ${maxStreak} 课`;
+
+                h.forEach((r, i) => {
+                    const item = document.createElement('div');
+                    item.className = 'history-item type-' + (r.type === 'win' ? 'win' : (r.type === 'live' ? 'live' :
+                        'death'));
+                    item.style.animationDelay = (i * 0.04) + 's';
+                    const icon = document.createElement('div');
+                    icon.className = 'history-item-icon';
+                    icon.textContent = r.type === 'win' ? '通' : (r.type === 'live' ? '活' : '死');
+                    const info = document.createElement('div');
+                    info.className = 'history-item-info';
+                    const reason = document.createElement('div');
+                    reason.className = 'history-item-reason';
+                    reason.textContent = (r.type === 'win' ? '通关：' : ('第' + r.lesson + '节课 · ')) + r.reason;
+                    const detail = document.createElement('div');
+                    detail.className = 'history-item-detail';
+                    detail.textContent = (r.description ? '情景：' + r.description : '') + (r.choice ? '  选择：' + r
+                        .choice : '');
+                    const meta = document.createElement('div');
+                    meta.className = 'history-item-meta';
+                    meta.textContent = (r.theme === 'red' ? '红黑' : '蓝白') + ' · ' + formatTime(r.timestamp);
+                    info.appendChild(reason);
+                    info.appendChild(detail);
+                    info.appendChild(meta);
+                    item.appendChild(icon);
+                    item.appendChild(info);
+                    historyList.appendChild(item);
+                });
+            }
+
+            function showScreen(screen) {
+                menuScreen.classList.add('hidden');
+                settingsScreen.classList.add('hidden');
+                historyScreen.classList.add('hidden');
+                gameContainer.classList.add('hidden');
+                overlay.classList.remove('show');
+                if (screen === 'menu') menuScreen.classList.remove('hidden');
+                else if (screen === 'settings') {
+                    settingsScreen.classList.remove('hidden');
+                    updateThemeUI(getSavedTheme());
+                } else if (screen === 'history') {
+                    historyScreen.classList.remove('hidden');
+                    renderHistory();
+                } else if (screen === 'game') gameContainer.classList.remove('hidden');
+            }
+
+            const THEME_KEY = 'campus-survival-theme';
+
+            function getSavedTheme() { try { return localStorage.getItem(THEME_KEY) || 'blue'; } catch (e) { return 'blue'; } }
+
+            function saveTheme(t) { try { localStorage.setItem(THEME_KEY, t); } catch (e) {} }
+
+            function applyTheme(t) {
+                document.body.classList.toggle('theme-red', t === 'red');
+                updateThemeUI(t);
+            }
+
+            function updateThemeUI(t) {
+                $('themeBlue').classList.toggle('active', t === 'blue');
+                $('themeRed').classList.toggle('active', t === 'red');
+            }
+            const initTheme = getSavedTheme();
+            applyTheme(initTheme);
+            state.currentTheme = initTheme;
+            $('themeBlue').addEventListener('click', () => { saveTheme('blue');
+                applyTheme('blue');
+                state.currentTheme = 'blue'; });
+            $('themeRed').addEventListener('click', () => { saveTheme('red');
+                applyTheme('red');
+                state.currentTheme = 'red'; });
+
+            $('startBtn').addEventListener('click', () => { showScreen('game');
+                initGame(); });
+            $('settingsBtn').addEventListener('click', () => showScreen('settings'));
+            $('historyBtn').addEventListener('click', () => showScreen('history'));
+            $('settingsBackBtn').addEventListener('click', () => showScreen('menu'));
+            $('historyBackBtn').addEventListener('click', () => showScreen('menu'));
+            $('historyClearBtn').addEventListener('click', () => {
+                if (loadHistory().length === 0) return;
+                saveHistory([]);
+                renderHistory();
+                showToast('记录已清空');
+            });
+            quitBtn.addEventListener('click', () => {
+                overlay.classList.remove('show');
+                clearTimers();
+                state.isEnded = true;
+                showScreen('menu');
+            });
+
+            function renderLesson() {
+                if (state.isEnded) return;
+                if (state.currentIndex >= state.courses.length) { showWin(); return; }
+                const c = state.courses[state.currentIndex];
+                lessonNumber.textContent = `第 ${state.currentIndex+1} 节课`;
+                lessonDesc.textContent = c.description;
+                lessonDesc.style.color = '';
+                optionsList.innerHTML = '';
+                c.options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.textContent = opt.text;
+                    btn.addEventListener('click', () => handleOption(opt, c.description));
+                    optionsList.appendChild(btn);
+                });
+                skipBtn.disabled = false;
+                state.isTransitioning = false;
+            }
+
+            function disableBtns() {
+                document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+                skipBtn.disabled = true;
+                state.isTransitioning = true;
+            }
+
+            function handleOption(opt, courseDesc) {
+                if (state.isEnded || state.isTransitioning) return;
+                disableBtns();
+                clearTimers();
+                const lessonNum = state.currentIndex + 1;
+                const recordBase = { lesson: lessonNum, description: courseDesc, choice: opt.text, theme: state
+                        .currentTheme, timestamp: Date.now(), sessionId: state.sessionId };
+                if (opt.outcome === 'live') {
+                    addRecord({ ...recordBase, type: 'live', reason: opt.consequence });
+                    lessonDesc.textContent = opt.consequence;
+                    lessonDesc.style.color = 'var(--text-muted)';
+                    const tid = setTimeout(() => { lessonDesc.style.color = '';
+                        goNext(); }, 1500);
+                    state.deathTimerIds.push(tid);
+                } else {
+                    if (opt.consequence.includes('三角板')) triggerTriangle(lessonNum, opt.consequence, recordBase);
+                    else triggerNatural(lessonNum, opt.consequence, recordBase);
+                }
+            }
+
+            function triggerNatural(ln, reason, recordBase) {
+                whiteFlash.classList.add('active');
+                const tid = setTimeout(() => { showDeath(ln, reason, recordBase);
+                    setTimeout(() => whiteFlash.classList.remove('active'), 500); }, 900);
+                state.deathTimerIds.push(tid);
+            }
+
+            function triggerTriangle(ln, reason, recordBase) {
+                resetCardAnim();
+                void cardTriangleSvg.offsetHeight;
+                cardTriangleOverlay.classList.add('active');
+                cardTriangleSvg.style.transition = 'top 0.6s cubic-bezier(0.22,0.68,0.35,1.0), opacity 0.2s';
+                cardTriangleSvg.style.top = 'calc(100% - 60px)';
+                cardTriangleSvg.style.opacity = '1';
+                const t1 = setTimeout(() => {
+                    cardCrackLine.classList.add('animating');
+                    cardCrackLine.style.height = '100%';
+                    cardCrackLine.style.opacity = '1';
+                    const t2 = setTimeout(() => { resetCardAnim();
+                        showDeath(ln, reason, recordBase); }, 500);
+                    state.deathTimerIds.push(t2);
+                }, 650);
+                state.deathTimerIds.push(t1);
+            }
+            skipBtn.addEventListener('click', () => {
+                if (state.isEnded || state.isTransitioning) return;
+                disableBtns();
+                lessonDesc.textContent = '跳过这节课…';
+                lessonDesc.style.color = 'var(--text-muted)';
+                const tid = setTimeout(() => { lessonDesc.style.color = '';
+                    goNext(); }, 600);
+                state.deathTimerIds.push(tid);
+            });
+
+            function goNext() { state.currentIndex++;
+                state.isTransitioning = false;
+                renderLesson(); }
+
+            function showDeath(ln, reason, recordBase) {
+                state.isEnded = true;
+                state.isTransitioning = false;
+                addRecord({ ...recordBase, type: 'death', reason: reason });
+                overlayCard.className = 'overlay-card death';
+                deathIcon.style.display = 'inline-block';
+                endTitle.innerHTML = `你活到的第 <span class="highlight">${ln}</span> 节课。`;
+                endReason.textContent = reason;
+                endSub.textContent = '-- 校园生存 · 终结 --';
+                restartBtn.className = 'btn-restart death-btn';
+                restartBtn.textContent = '重来';
+                waterDrops();
+                overlay.classList.add('show');
+            }
+
+            function showWin() {
+                state.isEnded = true;
+                state.isTransitioning = false;
+                addRecord({ type: 'win', lesson: 7, description: '', choice: '', reason: '成功穿越校园死亡一天',
+                    theme: state.currentTheme, timestamp: Date.now(), sessionId: state.sessionId });
+                overlayCard.className = 'overlay-card win';
+                deathIcon.style.display = 'none';
+                waterDropArea.innerHTML = '';
+                endTitle.innerHTML = '恭喜你活过了 <span class="highlight">七节课</span>！';
+                endReason.textContent = '你成功穿越了校园的死亡一天。';
+                endSub.textContent = '-- 校园生存 · 奇迹 --';
+                restartBtn.className = 'btn-restart';
+                restartBtn.textContent = '再玩一次';
+                overlay.classList.add('show');
+            }
+
+            function waterDrops() {
+                waterDropArea.innerHTML = '';
+                const pos = [8, 22, 38, 55, 72, 88];
+                for (let i = 0; i < 6; i++) {
+                    const l = pos[i] + '%';
+                    const tr = document.createElement('div');
+                    tr.className = 'drop-path';
+                    tr.style.left = l;
+                    const d = document.createElement('div');
+                    d.className = 'drop-dot';
+                    d.style.left = l;
+                    waterDropArea.appendChild(tr);
+                    waterDropArea.appendChild(d);
+                    const t1 = setTimeout(() => {
+                        tr.style.height = (60 + Math.random() * 40) + '%';
+                        tr.style.opacity = '0.8';
+                        d.style.top = (70 + Math.random() * 30) + '%';
+                        d.style.opacity = '1';
+                        const t2 = setTimeout(() => { d.style.opacity = '0'; }, 1400);
+                        state.deathTimerIds.push(t2);
+                    }, i * 180 + 200);
+                    state.deathTimerIds.push(t1);
+                }
+            }
+
+            function initGame() {
+                clearTimers();
+                state.deathTimerIds = [];
+                state.isEnded = false;
+                state.isTransitioning = false;
+                state.currentIndex = 0;
+                state.sessionId = Date.now() + '_' + Math.random().toString(36);
+                state.courses = state.currentTheme === 'red' ?
+                    [...shuffle(COURSES_RED_RANDOM), FINAL_COURSE_RED] :
+                    [...shuffle(COURSES_BLUE_RANDOM), FINAL_COURSE_BLUE];
+                overlay.classList.remove('show');
+                whiteFlash.classList.remove('active');
+                resetCardAnim();
+                lessonDesc.style.color = '';
+                deathIcon.style.display = 'none';
+                waterDropArea.innerHTML = '';
+                overlayCard.className = 'overlay-card';
+                restartBtn.className = 'btn-restart';
+                restartBtn.textContent = '重来';
+                renderLesson();
+            }
+            restartBtn.addEventListener('click', () => { overlay.classList.remove('show');
+                initGame(); });
+
+            document.addEventListener('keydown', e => {
+                if ((e.key === 'Enter' || e.key === ' ') && overlay.classList.contains('show')) { e
+                        .preventDefault();
+                    restartBtn.click();
+                    return; }
+                if ((e.key === 's' || e.key === 'S') && !state.isEnded && !state.isTransitioning && !skipBtn
+                    .disabled && !gameContainer.classList.contains('hidden')) { e.preventDefault();
+                    skipBtn.click();
+                    return; }
+                if (!state.isEnded && !state.isTransitioning && !gameContainer.classList.contains('hidden')) {
+                    const btns = document.querySelectorAll('.option-btn:not(:disabled)');
+                    const num = parseInt(e.key);
+                    if (num >= 1 && num <= btns.length) { e.preventDefault();
+                        btns[num - 1].click(); }
+                }
+            });
+
+            showScreen('menu');
+            console.log('校园生存 · 完整结局文案已加载');
+        })();
+    </script>
+</body>
+</html>
